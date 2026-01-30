@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: vaultcore-financial
+
+  datasource:
+    url: jdbc:h2:mem:vaultcore-db
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+  h2:
+    console:
+      enabled: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/vaultcore
+          jwk-set-uri: http://localhost:8080/realms/vaultcore/protocol/openid-connect/certs
+
+  keycloak:
+    server-url: http://localhost:8080
+    realm: vaultcore
+    client-id: vaultcore-backend
+    client-secret: YOUR_CLIENT_SECRET
+    admin:
+      username: superadmin
+      password: superadmin_password
