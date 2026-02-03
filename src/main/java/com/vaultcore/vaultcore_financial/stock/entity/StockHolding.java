@@ -33,5 +33,44 @@ public class StockHolding {
     @Column(nullable = false, precision = 19, scale = 8)
     private BigDecimal avgBuyPrice;
 
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    public BigDecimal getAvgBuyPrice() {
+        return avgBuyPrice;
+    }
+
+    public void setAvgBuyPrice(BigDecimal avgBuyPrice) {
+        this.avgBuyPrice = avgBuyPrice;
+    }
     // getters & setters
 }

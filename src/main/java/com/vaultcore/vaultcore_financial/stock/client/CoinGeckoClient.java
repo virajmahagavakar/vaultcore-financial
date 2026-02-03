@@ -52,6 +52,17 @@ public class CoinGeckoClient {
                 .block();
     }
 
+    public BigDecimal getCurrentPrice(String coinId) {
+        MarketCoinDetailDto detail = getCoinDetails(coinId);
+
+        if (detail == null || detail.getCurrentPrice() == null) {
+            throw new RuntimeException("Price not available for coin: " + coinId);
+        }
+
+        return detail.getCurrentPrice();
+    }
+
+
     /* =========================
        PRICE CHART
        ========================= */

@@ -1,39 +1,34 @@
 package com.vaultcore.vaultcore_financial.stock.controller;
 
-import com.vaultcore.vaultcore_financial.stock.entity.Watchlist;
+import com.vaultcore.vaultcore_financial.stock.dto.WatchlistDto;
 import com.vaultcore.vaultcore_financial.stock.service.WatchlistService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/watchlist")
-@RequiredArgsConstructor
 public class WatchlistController {
 
     private final WatchlistService watchlistService;
 
-    @GetMapping("/{userId}")
-    public List<Watchlist> getWatchlist(@PathVariable UUID userId) {
-        return watchlistService.getUserWatchlist(userId);
+    public WatchlistController(WatchlistService watchlistService) {
+        this.watchlistService = watchlistService;
     }
 
-    @PostMapping("/{userId}")
-    public Watchlist addToWatchlist(
-            @PathVariable UUID userId,
-            @RequestParam String coinId,
-            @RequestParam String symbol
-    ) {
-        return watchlistService.addToWatchlist(userId, coinId, symbol);
+    @PostMapping("/{symbol}")
+    public void add(@PathVariable String symbol) {
+        watchlistService.add(symbol);
     }
 
-    @DeleteMapping("/{userId}/{coinId}")
-    public void removeFromWatchlist(
-            @PathVariable UUID userId,
-            @PathVariable String coinId
-    ) {
-        watchlistService.removeFromWatchlist(userId, coinId);
+    @DeleteMapping("/{symbol}")
+    public void remove(@PathVariable String symbol) {
+        watchlistService.remove(symbol);
+    }
+
+    @GetMapping
+    public List<WatchlistDto> getWatchlist() {
+        return watchlistService.getWatchlist();
     }
 }
+//✅ UI coverage (Watchlist) // //✔ Add coin to watchlist //✔ Remove coin //✔ List watchlist items //✔ Live price display //✔ User-isolated data (Keycloak) //✔ No duplicate entries // //This directly backs: // //Watchlist sidebar // //Watchlist page table // //Add/remove icons from market page
