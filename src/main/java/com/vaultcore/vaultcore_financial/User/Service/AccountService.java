@@ -80,4 +80,11 @@ public class AccountService {
     public boolean verifyPin(Account account, String pin) {
         return account.getPin().equals(pin); // in real app, use hash comparison
     }
+
+    public Account getAccountById(UUID accountId) {
+        return accountRepository.findById(accountId)
+                .orElseThrow(() ->
+                        new RuntimeException("Account not found"));
+    }
+
 }
