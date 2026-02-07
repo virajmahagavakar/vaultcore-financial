@@ -1,6 +1,8 @@
 package com.vaultcore.vaultcore_financial.User.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -13,21 +15,30 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    /* ---------------- RELATION ---------------- */
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User user;
 
-    @Column(name = "failed_pin_attempts", nullable = false)
-    private Integer failedPinAttempts = 0;
+    /* ---------------- IDENTIFIERS ---------------- */
 
-    @Column(name = "last_transaction_date", nullable = false)
-    private LocalDate lastTransactionDate;
+    @Column(name = "keycloak_user_id", nullable = false, length = 64)
+    private String keycloakUserId;
 
     @Column(name = "account_number", nullable = false, unique = true, length = 32)
     private String accountNumber;
 
-    @Column(name = "keycloak_user_id", nullable = false, length = 64)
-    private String keycloakUserId;
+    /* ---------------- KYC DATA ---------------- */
+
+    @Column(name = "phone", nullable = false, length = 10)
+    private String phone;
+
+    @Column(name = "age", nullable = false)
+    private Integer age;
+
+    /* ---------------- BALANCE & STATUS ---------------- */
 
     @Column(nullable = false, precision = 38, scale = 2)
     private BigDecimal balance = BigDecimal.ZERO;
@@ -35,8 +46,15 @@ public class Account {
     @Column(nullable = false, length = 16)
     private String status = "ACTIVE"; // ACTIVE / FROZEN
 
+    /* ---------------- SECURITY ---------------- */
+
     @Column(length = 255)
-    private String pin; // hashed
+    private String pin; // TODO: hash later
+
+    @Column(name = "failed_pin_attempts", nullable = false)
+    private Integer failedPinAttempts = 0;
+
+    /* ---------------- PREFERENCES ---------------- */
 
     @Column(length = 64)
     private String nickname;
@@ -47,25 +65,28 @@ public class Account {
     @Column(name = "daily_limit", nullable = false, precision = 38, scale = 2)
     private BigDecimal dailyLimit = BigDecimal.valueOf(10000);
 
-    /* ---------- Lifecycle Hooks ---------- */
+    @Column(name = "last_transaction_date", nullable = false)
+    private LocalDate lastTransactionDate;
+
+    /* ---------------- LIFECYCLE ---------------- */
 
     @PrePersist
     protected void onCreate() {
         if (this.lastTransactionDate == null) {
             this.lastTransactionDate = LocalDate.now();
         }
-        if (this.failedPinAttempts == null) {
-            this.failedPinAttempts = 0;
-        }
         if (this.balance == null) {
             this.balance = BigDecimal.ZERO;
+        }
+        if (this.failedPinAttempts == null) {
+            this.failedPinAttempts = 0;
         }
         if (this.status == null) {
             this.status = "ACTIVE";
         }
     }
 
-    /* ---------- Business Logic ---------- */
+    /* ---------------- BUSINESS METHODS ---------------- */
 
     public boolean isFrozen() {
         return "FROZEN".equalsIgnoreCase(this.status);
@@ -78,6 +99,8 @@ public class Account {
     public void unfreeze() {
         this.status = "ACTIVE";
     }
+
+    /* ---------------- GETTERS & SETTERS ---------------- */
 
     public UUID getId() {
         return id;
@@ -95,20 +118,12 @@ public class Account {
         this.user = user;
     }
 
-    public Integer getFailedPinAttempts() {
-        return failedPinAttempts;
+    public String getKeycloakUserId() {
+        return keycloakUserId;
     }
 
-    public void setFailedPinAttempts(Integer failedPinAttempts) {
-        this.failedPinAttempts = failedPinAttempts;
-    }
-
-    public LocalDate getLastTransactionDate() {
-        return lastTransactionDate;
-    }
-
-    public void setLastTransactionDate(LocalDate lastTransactionDate) {
-        this.lastTransactionDate = lastTransactionDate;
+    public void setKeycloakUserId(String keycloakUserId) {
+        this.keycloakUserId = keycloakUserId;
     }
 
     public String getAccountNumber() {
@@ -119,12 +134,20 @@ public class Account {
         this.accountNumber = accountNumber;
     }
 
-    public String getKeycloakUserId() {
-        return keycloakUserId;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setKeycloakUserId(String keycloakUserId) {
-        this.keycloakUserId = keycloakUserId;
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
     }
 
     public BigDecimal getBalance() {
@@ -151,6 +174,14 @@ public class Account {
         this.pin = pin;
     }
 
+    public Integer getFailedPinAttempts() {
+        return failedPinAttempts;
+    }
+
+    public void setFailedPinAttempts(Integer failedPinAttempts) {
+        this.failedPinAttempts = failedPinAttempts;
+    }
+
     public String getNickname() {
         return nickname;
     }
@@ -175,4 +206,11 @@ public class Account {
         this.dailyLimit = dailyLimit;
     }
 
+    public LocalDate getLastTransactionDate() {
+        return lastTransactionDate;
+    }
+
+    public void setLastTransactionDate(LocalDate lastTransactionDate) {
+        this.lastTransactionDate = lastTransactionDate;
+    }
 }

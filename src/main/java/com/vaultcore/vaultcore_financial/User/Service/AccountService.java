@@ -19,33 +19,65 @@ public class AccountService {
         this.accountRepository = accountRepository;
     }
 
+    /* ---------------- LOOKUPS ---------------- */
+
     public Account getAccountForUser(String keycloakUserId) {
         return accountRepository
                 .findByKeycloakUserId(keycloakUserId)
                 .orElseThrow(() ->
-                        new AccountNotFoundException("Account not created yet"));
+                        new AccountNotFoundException(
+                                "Account not created for this user"
+                        ));
     }
 
+    public Account getAccountByAccountNumber(String accountNumber) {
+        return accountRepository
+                .findByAccountNumber(accountNumber)
+                .orElseThrow(() ->
+                        new AccountNotFoundException(
+                                "Account not found with number: " + accountNumber
+                        ));
+    }
 
-    public Account createAccount(User user, String pin) {
+    public boolean accountExistsForUser(String keycloakUserId) {
+        return accountRepository.existsByKeycloakUserId(keycloakUserId);
+    }
+
+    public Account getAccountById(UUID accountId) {
+        return accountRepository.findById(accountId)
+                .orElseThrow(() ->
+                        new AccountNotFoundException("Account not found"));
+    }
+
+    /* ---------------- CREATE ---------------- */
+
+    @Transactional
+    public Account createAccount(
+            User user,
+            String pin,
+            String phone,
+            Integer age
+    ) {
+
+        if (accountRepository.existsByKeycloakUserId(user.getKeycloakId())) {
+            throw new IllegalStateException("User already has an account");
+        }
+
         Account account = new Account();
-        account.setId(UUID.randomUUID());
         account.setUser(user);
         account.setKeycloakUserId(user.getKeycloakId());
-        account.setAccountNumber("VC-" + System.currentTimeMillis());
+        account.setAccountNumber(generateAccountNumber());
+        account.setPhone(phone);
+        account.setAge(age);
+        account.setPin(pin);
         account.setBalance(BigDecimal.ZERO);
-        account.setPin(pin); // ideally hashed
-        account.setNickname("My Account");
-        account.setNotificationPreference("EMAIL");
-        account.setDailyLimit(BigDecimal.valueOf(10000));
         account.setStatus("ACTIVE");
+        account.setNickname("My VaultCore Account");
 
         return accountRepository.save(account);
     }
 
-    public BigDecimal getBalance(Account account) {
-        return account.getBalance();
-    }
+    /* ---------------- UPDATES ---------------- */
 
     @Transactional
     public Account updateNickname(Account account, String nickname) {
@@ -77,14 +109,9 @@ public class AccountService {
         return accountRepository.save(account);
     }
 
-    public boolean verifyPin(Account account, String pin) {
-        return account.getPin().equals(pin); // in real app, use hash comparison
-    }
+    /* ---------------- HELPERS ---------------- */
 
-    public Account getAccountById(UUID accountId) {
-        return accountRepository.findById(accountId)
-                .orElseThrow(() ->
-                        new RuntimeException("Account not found"));
+    private String generateAccountNumber() {
+        return "VC-" + System.currentTimeMillis();
     }
-
 }

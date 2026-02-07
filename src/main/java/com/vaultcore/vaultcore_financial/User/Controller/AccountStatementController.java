@@ -1,12 +1,12 @@
 package com.vaultcore.vaultcore_financial.User.Controller;
 
 import com.vaultcore.vaultcore_financial.User.Service.AccountStatementService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 
@@ -21,6 +21,8 @@ public class AccountStatementController {
     ) {
         this.statementService = statementService;
     }
+
+    /* ---------------- DASHBOARD TOTALS ---------------- */
 
     @GetMapping("/total-debit")
     public ResponseEntity<BigDecimal> getTotalDebit(
@@ -39,5 +41,32 @@ public class AccountStatementController {
                 statementService.getTotalCredit(jwt.getSubject())
         );
     }
-}
 
+    /* ---------------- MONTHLY PDF DOWNLOAD ---------------- */
+
+    @GetMapping(
+            value = "/monthly-pdf",
+            produces = MediaType.APPLICATION_PDF_VALUE
+    )
+    public ResponseEntity<byte[]> downloadMonthlyStatement(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam int month,
+            @RequestParam int year
+    ) {
+
+        byte[] pdf =
+                statementService.generateMonthlyStatementPdf(
+                        jwt.getSubject(),
+                        month,
+                        year
+                );
+
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=VaultCore-Statement-" + month + "-" + year + ".pdf"
+                )
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+}

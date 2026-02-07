@@ -12,9 +12,13 @@ import java.util.UUID;
 
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
 
-    List<Transaction> findTop10ByKeycloakUserIdOrderByCreatedAtDesc(String keycloakUserId);
+    /* ---------------- DASHBOARD ---------------- */
 
-    List<Transaction> findByFromAccountIdOrToAccountId(UUID from, UUID to);
+    List<Transaction> findTop10ByKeycloakUserIdOrderByCreatedAtDesc(
+            String keycloakUserId
+    );
+
+    /* ---------------- STATEMENTS ---------------- */
 
     List<Transaction> findByKeycloakUserIdAndCreatedAtBetween(
             String keycloakUserId,
@@ -32,5 +36,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
             TransactionStatus status
     );
 
-    Optional<Transaction> findByReferenceId(String referenceId);
+    /* ---------------- ACCOUNT-BASED (INTERNAL) ---------------- */
+
+    List<Transaction> findByFromAccountIdOrToAccountId(
+            UUID fromAccountId,
+            UUID toAccountId
+    );
+
+    /* ---------------- REFERENCE / AUDIT ---------------- */
+
+    List<Transaction> findAllByReferenceId(String referenceId);
+
 }

@@ -7,5 +7,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface AccountRepository extends JpaRepository<Account, UUID> {
+
     Optional<Account> findByKeycloakUserId(String keycloakUserId);
+
+    Optional<Account> findByAccountNumber(String accountNumber);
+
+    boolean existsByKeycloakUserId(String keycloakUserId);
 }
+

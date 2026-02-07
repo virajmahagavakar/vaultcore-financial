@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,61 +23,87 @@ public class TransactionService {
         this.transactionRepository = transactionRepository;
     }
 
-    /* ---------------- CREATE / RECORD ---------------- */
+    /* ===============================
+       CREATE / RECORD TRANSACTION
+       =============================== */
 
     public Transaction recordTransaction(
-            UUID fromAccount,
-            UUID toAccount,
+            UUID fromAccountId,
+            UUID toAccountId,
             BigDecimal amount,
             TransactionType type,
             String description,
-            String keycloakUserId
+            String keycloakUserId,
+            String referenceId
     ) {
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount must be greater than zero");
         }
 
         Transaction tx = new Transaction();
-        tx.setFromAccountId(fromAccount);
-        tx.setToAccountId(toAccount);
+        tx.setFromAccountId(fromAccountId);
+        tx.setToAccountId(toAccountId);
         tx.setAmount(amount);
         tx.setType(type);
-        tx.setStatus(TransactionStatus.PENDING);
         tx.setDescription(description);
         tx.setKeycloakUserId(keycloakUserId);
-        tx.setReferenceId(UUID.randomUUID().toString());
+        tx.setReferenceId(referenceId);
+        tx.setStatus(TransactionStatus.PENDING);
+        tx.setCreatedAt(LocalDateTime.now());
 
         return transactionRepository.save(tx);
     }
 
-    public void markTransactionSuccess(String referenceId) {
-        Transaction tx = transactionRepository.findByReferenceId(referenceId)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+    /* ===============================
+       STATUS MANAGEMENT
+       =============================== */
 
-        if (tx.getStatus() != TransactionStatus.PENDING) {
-            throw new IllegalStateException("Invalid status transition");
+    public void markTransactionSuccess(String referenceId) {
+
+        List<Transaction> transactions =
+                transactionRepository.findAllByReferenceId(referenceId);
+
+        if (transactions.isEmpty()) {
+            throw new IllegalStateException("No transactions found for referenceId");
         }
 
-        tx.setStatus(TransactionStatus.SUCCESS);
-        transactionRepository.save(tx);
+        for (Transaction tx : transactions) {
+            if (tx.getStatus() != TransactionStatus.PENDING) {
+                throw new IllegalStateException("Transaction already processed");
+            }
+            tx.setStatus(TransactionStatus.SUCCESS);
+        }
+
+        transactionRepository.saveAll(transactions);
     }
 
     public void markTransactionFailed(String referenceId) {
-        Transaction tx = transactionRepository.findByReferenceId(referenceId)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
 
-        tx.setStatus(TransactionStatus.FAILED);
-        transactionRepository.save(tx);
+        List<Transaction> transactions =
+                transactionRepository.findAllByReferenceId(referenceId);
+
+        if (transactions.isEmpty()) {
+            throw new IllegalStateException("No transactions found for referenceId");
+        }
+
+        transactions.forEach(tx -> tx.setStatus(TransactionStatus.FAILED));
+        transactionRepository.saveAll(transactions);
     }
 
-    /* ---------------- READ / HISTORY ---------------- */
+    /* ===============================
+       READ / HISTORY
+       =============================== */
 
     public List<Transaction> getRecentTransactions(String keycloakUserId) {
         return transactionRepository
                 .findTop10ByKeycloakUserIdOrderByCreatedAtDesc(keycloakUserId);
     }
 
-    public Transaction getTransactionById(UUID transactionId, String keycloakUserId) {
+    public Transaction getTransactionById(
+            UUID transactionId,
+            String keycloakUserId
+    ) {
         Transaction tx = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new RuntimeException("Transaction not found"));
 
@@ -102,29 +129,39 @@ public class TransactionService {
             String keycloakUserId,
             TransactionType type
     ) {
-        return transactionRepository.findByKeycloakUserIdAndType(keycloakUserId, type);
+        return transactionRepository
+                .findByKeycloakUserIdAndType(keycloakUserId, type);
     }
 
     public List<Transaction> getTransactionsByStatus(
             String keycloakUserId,
             TransactionStatus status
     ) {
-        return transactionRepository.findByKeycloakUserIdAndStatus(keycloakUserId, status);
+        return transactionRepository
+                .findByKeycloakUserIdAndStatus(keycloakUserId, status);
     }
 
-    /* ---------------- INSIGHTS ---------------- */
+    /* ===============================
+       TOTALS / SUMMARY
+       =============================== */
 
     public BigDecimal getTotalDebited(String keycloakUserId) {
-        return transactionRepository.findByKeycloakUserIdAndType(
-                        keycloakUserId, TransactionType.DEBIT)
+        return transactionRepository
+                .findByKeycloakUserIdAndType(
+                        keycloakUserId,
+                        TransactionType.DEBIT
+                )
                 .stream()
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public BigDecimal getTotalCredited(String keycloakUserId) {
-        return transactionRepository.findByKeycloakUserIdAndType(
-                        keycloakUserId, TransactionType.CREDIT)
+        return transactionRepository
+                .findByKeycloakUserIdAndType(
+                        keycloakUserId,
+                        TransactionType.CREDIT
+                )
                 .stream()
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

@@ -1,99 +1,121 @@
 package com.vaultcore.vaultcore_financial.User.Controller;
 
 import com.vaultcore.vaultcore_financial.User.Entity.Account;
+import com.vaultcore.vaultcore_financial.User.Entity.User;
 import com.vaultcore.vaultcore_financial.User.Service.AccountService;
 import com.vaultcore.vaultcore_financial.User.Service.UserService;
-import com.vaultcore.vaultcore_financial.keycloak.config.SecurityUtil;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Controller;
+import com.vaultcore.vaultcore_financial.User.dto.AccountResponseDto;
+import com.vaultcore.vaultcore_financial.User.dto.CreateAccountRequestDto;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-@Controller
+
 @RestController
-@RequestMapping("/api/user/accounts")
+@RequestMapping("/api/v1/account")
 public class AccountController {
 
     private final AccountService accountService;
     private final UserService userService;
 
-    public AccountController(AccountService accountService, UserService userService) {
+    public AccountController(
+            AccountService accountService,
+            UserService userService
+    ) {
         this.accountService = accountService;
         this.userService = userService;
     }
 
-    // ------------------- Get Balance -------------------
-    @PreAuthorize("hasRole('USER')")
-    @GetMapping("/balance")
-    public BigDecimal getBalance() {
-        String keycloakUserId = String.valueOf(SecurityUtil.getKeycloakUserId());
-        Account account = accountService.getAccountForUser(keycloakUserId);
-        return account.getBalance();
-    }
+    /* ---------------- CREATE ACCOUNT ---------------- */
 
-    // ------------------- Create Account -------------------
-    @PreAuthorize("hasRole('USER')")
     @PostMapping("/create")
-    public Account createAccount(@RequestParam String pin) {
-        var user = userService.getOrCreateUser(
-                SecurityUtil.getKeycloakUserId(),
-                SecurityUtil.getEmail(),
-                SecurityUtil.getName()
+    public AccountResponseDto createAccount(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody CreateAccountRequestDto request
+    ) {
+        User user = userService.getOrCreateUser(
+                jwt.getSubject(),
+                jwt.getClaimAsString("email"),
+                jwt.getClaimAsString("name")
         );
-        return accountService.createAccount(user, pin);
+
+        Account account = accountService.createAccount(
+                user,
+                request.getPin(),
+                request.getPhone(),
+                request.getAge()
+        );
+
+        return AccountResponseDto.from(account);
     }
 
-    // ------------------- Update Nickname -------------------
-    @PreAuthorize("hasRole('USER')")
+
+    /* ---------------- GET ACCOUNT ---------------- */
+
+    @GetMapping("/me")
+    public AccountResponseDto getMyAccount(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        Account account =
+                accountService.getAccountForUser(jwt.getSubject());
+
+        return AccountResponseDto.from(account);
+    }
+
+    /* ---------------- UPDATE NICKNAME ---------------- */
+
     @PutMapping("/nickname")
-    public Account updateNickname(@RequestParam String nickname) {
-        String keycloakUserId = String.valueOf(SecurityUtil.getKeycloakUserId());
-        Account account = accountService.getAccountForUser(keycloakUserId);
-        return accountService.updateNickname(account, nickname);
+    public AccountResponseDto updateNickname(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam String nickname
+    ) {
+        Account account =
+                accountService.getAccountForUser(jwt.getSubject());
+
+        return AccountResponseDto.from(
+                accountService.updateNickname(account, nickname)
+        );
     }
 
-    // ------------------- Update Notification Preference -------------------
-    @PreAuthorize("hasRole('USER')")
-    @PutMapping("/notifications")
-    public Account updateNotifications(@RequestParam String preference) {
-        String keycloakUserId = String.valueOf(SecurityUtil.getKeycloakUserId());
-        Account account = accountService.getAccountForUser(keycloakUserId);
-        return accountService.updateNotificationPreference(account, preference);
-    }
+    /* ---------------- UPDATE DAILY LIMIT ---------------- */
 
-    // ------------------- Update Daily Limit -------------------
-    @PreAuthorize("hasRole('USER')")
     @PutMapping("/daily-limit")
-    public Account updateDailyLimit(@RequestParam BigDecimal limit) {
-        String keycloakUserId = String.valueOf(SecurityUtil.getKeycloakUserId());
-        Account account = accountService.getAccountForUser(keycloakUserId);
-        return accountService.updateDailyLimit(account, limit);
+    public AccountResponseDto updateDailyLimit(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam BigDecimal limit
+    ) {
+        Account account =
+                accountService.getAccountForUser(jwt.getSubject());
+
+        return AccountResponseDto.from(
+                accountService.updateDailyLimit(account, limit)
+        );
     }
 
-    // ------------------- Freeze Account -------------------
-    @PreAuthorize("hasRole('USER')")
+    /* ---------------- FREEZE / UNFREEZE ---------------- */
+
     @PutMapping("/freeze")
-    public Account freezeAccount() {
-        String keycloakUserId = String.valueOf(SecurityUtil.getKeycloakUserId());
-        Account account = accountService.getAccountForUser(keycloakUserId);
-        return accountService.freezeAccount(account);
+    public AccountResponseDto freezeAccount(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        Account account =
+                accountService.getAccountForUser(jwt.getSubject());
+
+        return AccountResponseDto.from(
+                accountService.freezeAccount(account)
+        );
     }
 
-    // ------------------- Unfreeze Account -------------------
-    @PreAuthorize("hasRole('USER')")
     @PutMapping("/unfreeze")
-    public Account unfreezeAccount() {
-        String keycloakUserId = String.valueOf(SecurityUtil.getKeycloakUserId());
-        Account account = accountService.getAccountForUser(keycloakUserId);
-        return accountService.unfreezeAccount(account);
-    }
+    public AccountResponseDto unfreezeAccount(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        Account account =
+                accountService.getAccountForUser(jwt.getSubject());
 
-    // ------------------- Verify PIN -------------------
-    @PreAuthorize("hasRole('USER')")
-    @PostMapping("/verify-pin")
-    public boolean verifyPin(@RequestParam String pin) {
-        String keycloakUserId = String.valueOf(SecurityUtil.getKeycloakUserId());
-        Account account = accountService.getAccountForUser(keycloakUserId);
-        return accountService.verifyPin(account, pin);
+        return AccountResponseDto.from(
+                accountService.unfreezeAccount(account)
+        );
     }
 }

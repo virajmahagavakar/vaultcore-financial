@@ -3,53 +3,75 @@ package com.vaultcore.vaultcore_financial.User.Entity;
 import com.vaultcore.vaultcore_financial.User.Entity.Enum.TransactionStatus;
 import com.vaultcore.vaultcore_financial.User.Entity.Enum.TransactionType;
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "transactions")
+@Table(
+        name = "transactions",
+        indexes = {
+                @Index(name = "idx_reference_id", columnList = "reference_id"),
+                @Index(name = "idx_keycloak_user", columnList = "keycloak_user_id"),
+                @Index(name = "idx_created_at", columnList = "created_at")
+        }
+)
 public class Transaction {
 
     @Id
     @GeneratedValue
     private UUID id;
 
-    @Column(name = "from_account_id")
+    @Column(name = "from_account_id", nullable = false)
     private UUID fromAccountId;
 
-    @Column(name = "to_account_id")
+    @Column(name = "to_account_id", nullable = false)
     private UUID toAccountId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 38, scale = 2)
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TransactionType type; // DEBIT / CREDIT / TRANSFER
+    private TransactionType type;   // DEBIT / CREDIT
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TransactionStatus status; // PENDING / SUCCESS / FAILED
 
-    @Column(name = "reference_id", unique = true, nullable = false)
+    /**
+     * Same referenceId is shared by DEBIT + CREDIT rows
+     * → MUST NOT be unique
+     */
+    @Column(name = "reference_id", nullable = false)
     private String referenceId;
 
     @Column(nullable = false)
     private String description;
 
+    /**
+     * Owner of this ledger entry
+     * (sender for DEBIT, receiver for CREDIT)
+     */
     @Column(name = "keycloak_user_id", nullable = false)
     private String keycloakUserId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    /* ===============================
+       LIFECYCLE
+       =============================== */
+
     @PrePersist
-    void onCreate() {
+    protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
 
-    // getters & setters
+    /* ===============================
+       GETTERS & SETTERS
+       =============================== */
 
     public UUID getId() {
         return id;
@@ -130,7 +152,4 @@ public class Transaction {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-
-
-
 }
