@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 220 20% 97%;
+    --foreground: 220 30% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 30% 10%;
+
+    --primary: 199 89% 48%;
+    --primary-foreground: 220 30% 5%;
+
+    --secondary: 220 15% 92%;
+    --secondary-foreground: 220 30% 10%;
+
+    --muted: 220 15% 94%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 199 89% 48%;
+    --accent-foreground: 220 30% 5%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 199 89% 48%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 220 25% 12%;
+    --sidebar-foreground: 220 10% 85%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 220 30% 5%;
+    --sidebar-accent: 220 20% 18%;
+    --sidebar-accent-foreground: 220 10% 90%;
+    --sidebar-border: 220 20% 20%;
+    --sidebar-ring: 199 89% 48%;
+
+    /* VaultCore custom tokens */
+    --vault-cyan: 199 89% 48%;
+    --vault-cyan-glow: 199 89% 58%;
+    --vault-dark: 220 30% 8%;
+    --vault-dark-card: 220 25% 12%;
+    --vault-dark-surface: 220 20% 16%;
+    --vault-success: 142 71% 45%;
+    --vault-warning: 38 92% 50%;
+    --vault-glass: 220 20% 16%;
+    --vault-glass-border: 220 15% 25%;
+
+    --gradient-hero: linear-gradient(135deg, hsl(220 30% 6%) 0%, hsl(220 25% 12%) 50%, hsl(199 40% 15%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(199 89% 48%) 0%, hsl(199 89% 62%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(220 25% 14%) 0%, hsl(220 20% 18%) 100%);
+    --shadow-glow: 0 0 30px -5px hsl(199 89% 48% / 0.3);
+    --shadow-card: 0 4px 24px -4px hsl(220 30% 5% / 0.3);
+  }
+
+  .dark {
+    --background: 220 30% 6%;
+    --foreground: 220 10% 92%;
+
+    --card: 220 25% 12%;
+    --card-foreground: 220 10% 92%;
+
+    --popover: 220 25% 14%;
+    --popover-foreground: 220 10% 92%;
+
+    --primary: 199 89% 48%;
+    --primary-foreground: 220 30% 5%;
+
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 220 10% 90%;
+
+    --muted: 220 20% 16%;
+    --muted-foreground: 220 10% 55%;
+
+    --accent: 199 89% 48%;
+    --accent-foreground: 220 30% 5%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 20%;
+    --input: 220 20% 18%;
+    --ring: 199 89% 48%;
+
+    --sidebar-background: 220 30% 5%;
+    --sidebar-foreground: 220 10% 85%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 220 30% 5%;
+    --sidebar-accent: 220 20% 12%;
+    --sidebar-accent-foreground: 220 10% 90%;
+    --sidebar-border: 220 20% 15%;
+    --sidebar-ring: 199 89% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  /* Hide default cursor on large screens where custom cursor is active */
+  @media (min-width: 1024px) {
+    body, a, button, input, select, textarea, .clickable {
+      cursor: none;
+    }
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-card/60 backdrop-blur-xl border border-border/50;
+  }
+
+  .glass-strong {
+    @apply bg-card/80 backdrop-blur-2xl border border-border/60;
+  }
+
+  .glow-cyan {
+    box-shadow: 0 0 30px -5px hsl(199 89% 48% / 0.3);
+  }
+
+  .glow-cyan-sm {
+    box-shadow: 0 0 15px -3px hsl(199 89% 48% / 0.25);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(199 89% 48%) 0%, hsl(199 89% 70%) 100%);
+  }
+
+  .vault-gradient-bg {
+    background: linear-gradient(135deg, hsl(220 30% 6%) 0%, hsl(220 25% 12%) 50%, hsl(199 40% 15%) 100%);
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px -5px hsl(199 89% 48% / 0.3); }
+    50% { box-shadow: 0 0 40px -5px hsl(199 89% 48% / 0.5); }
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+}
