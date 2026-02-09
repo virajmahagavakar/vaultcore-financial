@@ -2,8 +2,11 @@ package com.vaultcore.vaultcore_financial.stock.controller;
 
 import com.vaultcore.vaultcore_financial.stock.dto.WatchlistDto;
 import com.vaultcore.vaultcore_financial.stock.service.WatchlistService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -16,19 +19,34 @@ public class WatchlistController {
         this.watchlistService = watchlistService;
     }
 
-    @PostMapping("/{symbol}")
-    public void add(@PathVariable String symbol) {
-        watchlistService.add(symbol);
+    /* =========================
+       ADD TO WATCHLIST
+       ========================= */
+    @PostMapping("/{coinId}")
+    public ResponseEntity<Void> add(@PathVariable String coinId) {
+        watchlistService.add(coinId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @DeleteMapping("/{symbol}")
-    public void remove(@PathVariable String symbol) {
-        watchlistService.remove(symbol);
+    /* =========================
+       REMOVE FROM WATCHLIST
+       ========================= */
+    @DeleteMapping("/{coinId}")
+    public ResponseEntity<Void> remove(@PathVariable String coinId) {
+        watchlistService.remove(coinId);
+        return ResponseEntity.noContent().build();
     }
 
+    /* =========================
+       GET WATCHLIST (SAFE)
+       ========================= */
     @GetMapping
-    public List<WatchlistDto> getWatchlist() {
-        return watchlistService.getWatchlist();
+    public ResponseEntity<List<WatchlistDto>> getWatchlist() {
+        try {
+            return ResponseEntity.ok(watchlistService.getWatchlist());
+        } catch (Exception ex) {
+            // ⛑️ NEVER break frontend rendering
+            return ResponseEntity.ok(Collections.emptyList());
+        }
     }
 }
-//✅ UI coverage (Watchlist) // //✔ Add coin to watchlist //✔ Remove coin //✔ List watchlist items //✔ Live price display //✔ User-isolated data (Keycloak) //✔ No duplicate entries // //This directly backs: // //Watchlist sidebar // //Watchlist page table // //Add/remove icons from market page

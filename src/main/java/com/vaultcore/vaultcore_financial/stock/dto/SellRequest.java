@@ -1,23 +1,22 @@
 package com.vaultcore.vaultcore_financial.stock.dto;
+
 public class SellRequest {
 
-    private String symbol;
-    private Double quantity; // units to sell
+    private String coinId;
+    private int quantity;
 
-    public String getSymbol() {
-        return symbol;
+    public String getCoinId() {
+        return coinId;
+    }
+    public void setCoinId(String coinId) {
+        this.coinId = coinId;
     }
 
-    public Double getQuantity() {
+    public int getQuantity() {
         return quantity;
     }
 
-    public void setSymbol(String symbol) {
-        this.symbol = symbol;
-    }
-
-    public void setQuantity(Double quantity) {
+    public void setQuantity(int quantity) {
         this.quantity = quantity;
     }
 }
-

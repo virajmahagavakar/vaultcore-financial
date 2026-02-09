@@ -53,55 +53,59 @@ public class TradeService {
     }
 
     /* ========================= BUY ========================= */
+
     @Transactional
     public TradeResponse buy(BuyRequest request) {
 
+        if (request == null || request.getAmount() == null ||
+                request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Invalid buy amount");
+        }
+
         User user = getCurrentUser();
+        String coinId = request.getCoinId();
 
-        BigDecimal price = coinGeckoClient
-                .getCoinDetails(request.getSymbol())
-                .getCurrentPrice();
+        BigDecimal price = coinGeckoClient.getCurrentPrice(coinId);
+        BigDecimal amount = request.getAmount();
 
-        BigDecimal amount = BigDecimal.valueOf(request.getAmount());
-
-        int quantity = amount
-                .divide(price, 0, RoundingMode.DOWN)
-                .intValue();
-
+        int quantity = amount.divide(price, 0, RoundingMode.DOWN).intValue();
         if (quantity <= 0) {
             throw new IllegalStateException("Amount too small to buy");
         }
 
-        walletService.debit(request.getAmount());
+        BigDecimal totalCost = price.multiply(BigDecimal.valueOf(quantity));
+
+        // ✅ CORRECT WALLET CALL
+        walletService.debitForTrade(user.getKeycloakId(), totalCost);
 
         StockHolding holding = stockHoldingRepository
-                .findByUserAndSymbol(user, request.getSymbol())
+                .findByUserAndSymbol(user, coinId)
                 .orElseGet(() -> {
                     StockHolding h = new StockHolding();
                     h.setUser(user);
-                    h.setSymbol(request.getSymbol());
+                    h.setSymbol(coinId);
                     h.setQuantity(0);
                     h.setAvgBuyPrice(BigDecimal.ZERO);
                     return h;
                 });
 
-        BigDecimal totalCost =
+        BigDecimal existingValue =
                 holding.getAvgBuyPrice()
-                        .multiply(BigDecimal.valueOf(holding.getQuantity()))
-                        .add(price.multiply(BigDecimal.valueOf(quantity)));
+                        .multiply(BigDecimal.valueOf(holding.getQuantity()));
 
+        BigDecimal newValue = existingValue.add(totalCost);
         int newQty = holding.getQuantity() + quantity;
 
         holding.setQuantity(newQty);
         holding.setAvgBuyPrice(
-                totalCost.divide(BigDecimal.valueOf(newQty), 8, RoundingMode.HALF_UP)
+                newValue.divide(BigDecimal.valueOf(newQty), 8, RoundingMode.HALF_UP)
         );
 
         stockHoldingRepository.save(holding);
 
         StockTrade trade = new StockTrade();
         trade.setUser(user);
-        trade.setSymbol(request.getSymbol());
+        trade.setSymbol(coinId);
         trade.setQuantity(quantity);
         trade.setPrice(price);
         trade.setType(TradeType.BUY);
@@ -109,36 +113,38 @@ public class TradeService {
         stockTradeRepository.save(trade);
 
         return new TradeResponse(
-                request.getSymbol(),
+                coinId,
                 TradeType.BUY.name(),
-                (double) quantity,
+                quantity,
                 price.doubleValue(),
                 "BUY order executed successfully"
         );
     }
 
     /* ========================= SELL ========================= */
+
     @Transactional
     public TradeResponse sell(SellRequest request) {
 
         User user = getCurrentUser();
+        String coinId = request.getCoinId();
+
+        int sellQty = request.getQuantity();
+
+        if (sellQty <= 0) {
+            throw new IllegalArgumentException("Invalid sell quantity");
+        }
 
         StockHolding holding = stockHoldingRepository
-                .findByUserAndSymbol(user, request.getSymbol())
+                .findByUserAndSymbol(user, coinId)
                 .orElseThrow(() -> new IllegalStateException("No holdings found"));
-
-        int sellQty = request.getQuantity().intValue();
 
         if (holding.getQuantity() < sellQty) {
             throw new IllegalStateException("Insufficient quantity");
         }
 
-        BigDecimal price = coinGeckoClient
-                .getCoinDetails(request.getSymbol())
-                .getCurrentPrice();
-
-        BigDecimal sellAmount =
-                price.multiply(BigDecimal.valueOf(sellQty));
+        BigDecimal price = coinGeckoClient.getCurrentPrice(coinId);
+        BigDecimal sellAmount = price.multiply(BigDecimal.valueOf(sellQty));
 
         holding.setQuantity(holding.getQuantity() - sellQty);
 
@@ -148,11 +154,12 @@ public class TradeService {
             stockHoldingRepository.save(holding);
         }
 
-        walletService.credit(sellAmount.doubleValue());
+        // ✅ CORRECT WALLET CALL
+        walletService.creditForTrade(user.getKeycloakId(), sellAmount);
 
         StockTrade trade = new StockTrade();
         trade.setUser(user);
-        trade.setSymbol(request.getSymbol());
+        trade.setSymbol(coinId);
         trade.setQuantity(sellQty);
         trade.setPrice(price);
         trade.setType(TradeType.SELL);
@@ -160,15 +167,14 @@ public class TradeService {
         stockTradeRepository.save(trade);
 
         return new TradeResponse(
-                request.getSymbol(),
+                coinId,
                 TradeType.SELL.name(),
-                (double) sellQty,
+                sellQty,
                 price.doubleValue(),
                 "SELL order executed successfully"
         );
     }
 
-    /* ========================= HISTORY ========================= */
     public List<StockTrade> getTradeHistory() {
         return stockTradeRepository
                 .findByUserOrderByCreatedAtDesc(getCurrentUser());

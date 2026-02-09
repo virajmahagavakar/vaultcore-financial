@@ -4,7 +4,9 @@ import com.vaultcore.vaultcore_financial.stock.client.CoinGeckoClient;
 import com.vaultcore.vaultcore_financial.stock.dto.MarketChartDto;
 import com.vaultcore.vaultcore_financial.stock.dto.MarketCoinDetailDto;
 import com.vaultcore.vaultcore_financial.stock.dto.MarketCoinDto;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Comparator;
 import java.util.List;
@@ -20,7 +22,7 @@ public class MarketService {
     }
 
     /* =========================
-       MARKET LISTS (HOME PAGE)
+       MARKET LISTS
        ========================= */
 
     public List<MarketCoinDto> getAllCoins() {
@@ -31,7 +33,7 @@ public class MarketService {
         return coinGeckoClient.getMarketCoins()
                 .stream()
                 .limit(50)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<MarketCoinDto> getTopGainers() {
@@ -42,7 +44,7 @@ public class MarketService {
                         MarketCoinDto::getPriceChangePercentage24h
                 ).reversed())
                 .limit(10)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<MarketCoinDto> getTopLosers() {
@@ -53,42 +55,53 @@ public class MarketService {
                         MarketCoinDto::getPriceChangePercentage24h
                 ))
                 .limit(10)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /* =========================
-       COIN DETAILS PAGE
+       COIN DETAILS
        ========================= */
 
-    public MarketCoinDetailDto getCoinDetails(String symbol) {
-        return coinGeckoClient.getCoinDetails(symbol);
+    public MarketCoinDetailDto getCoinDetails(String coinId) {
+        return coinGeckoClient.getCoinDetails(coinId);
     }
 
     /* =========================
        PRICE CHART
-       range = 1D | 1W | 1M
        ========================= */
 
-    public MarketChartDto getChart(String symbol, String range) {
+    public MarketChartDto getChart(String coinId, String range) {
+
+        if (range == null || range.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Range is required"
+            );
+        }
 
         int days;
 
         switch (range.toUpperCase()) {
-            case "1D":
-                days = 1;
-                break;
-            case "1W":
-                days = 7;
-                break;
-            case "1M":
-                days = 30;
-                break;
-            default:
-                throw new IllegalArgumentException(
-                        "Invalid range. Use 1D, 1W, or 1M"
-                );
+
+            // Label-based ranges (optional support)
+            case "1D" -> days = 1;
+            case "1W" -> days = 7;
+            case "1M" -> days = 30;
+            case "1Y" -> days = 180;
+
+            // Numeric ranges (frontend-friendly)
+            case "1" -> days = 1;
+            case "7" -> days = 7;
+            case "30" -> days = 30;
+            case "180" -> days = 180;
+
+            default -> throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid range. Allowed values: 1, 7, 30, 180 (or 1D, 1W, 1M, 1Y)"
+            );
         }
 
-        return coinGeckoClient.getMarketChart(symbol, days);
+        return coinGeckoClient.getMarketChart(coinId, days);
     }
+
 }

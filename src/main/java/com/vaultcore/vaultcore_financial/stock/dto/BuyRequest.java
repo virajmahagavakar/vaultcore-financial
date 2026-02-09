@@ -1,24 +1,25 @@
 package com.vaultcore.vaultcore_financial.stock.dto;
 
+import java.math.BigDecimal;
+
 public class BuyRequest {
 
-    private String symbol;
-    private Double amount; // money user wants to invest
+    private String coinId;
+    private BigDecimal amount; // money user wants to invest
 
-    public String getSymbol() {
-        return symbol;
+    public String getCoinId() {
+        return coinId;
     }
 
-    public Double getAmount() {
+    public void setCoinId(String coinId) {
+        this.coinId = coinId;
+    }
+
+    public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setSymbol(String symbol) {
-        this.symbol = symbol;
-    }
-
-    public void setAmount(Double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 }
-

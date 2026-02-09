@@ -1,4 +1,5 @@
 package com.vaultcore.vaultcore_financial.stock.controller;
+
 import com.vaultcore.vaultcore_financial.stock.dto.DepositRequest;
 import com.vaultcore.vaultcore_financial.stock.dto.WalletResponse;
 import com.vaultcore.vaultcore_financial.stock.dto.WithdrawRequest;
@@ -16,7 +17,7 @@ public class WalletController {
     }
 
     @GetMapping
-    public WalletResponse wallet() {
+    public WalletResponse getWallet() {
         return walletService.getWallet();
     }
 
@@ -30,6 +31,7 @@ public class WalletController {
         return walletService.withdraw(request);
     }
 }
+
 
 //✅ UI FEATURES NOW BACKED (Wallet / Banking)
 //

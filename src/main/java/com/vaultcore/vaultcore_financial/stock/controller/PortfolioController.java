@@ -2,9 +2,7 @@ package com.vaultcore.vaultcore_financial.stock.controller;
 
 import com.vaultcore.vaultcore_financial.stock.dto.PortfolioResponse;
 import com.vaultcore.vaultcore_financial.stock.service.StockPortfolioService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/portfolio")
@@ -21,6 +19,7 @@ public class PortfolioController {
         return portfolioService.getPortfolio();
     }
 }
+
 //✅ What UI features this fully supports
 //
 //✔ Portfolio holdings table

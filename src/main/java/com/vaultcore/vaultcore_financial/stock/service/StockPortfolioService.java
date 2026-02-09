@@ -31,61 +31,82 @@ public class StockPortfolioService {
         this.userRepository = userRepository;
     }
 
-    private String getCurrentUserId() {
-        return SecurityContextHolder.getContext()
+    private User getCurrentUser() {
+        String keycloakId = SecurityContextHolder
+                .getContext()
                 .getAuthentication()
-                .getName(); // Keycloak ID
+                .getName();
+
+        return userRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     public PortfolioResponse getPortfolio() {
 
-        String keycloakId = getCurrentUserId();
+        User user = getCurrentUser();
+        List<StockHolding> holdings =
+                stockHoldingRepository.findByUser(user);
 
-        User user = userRepository.findByKeycloakId(keycloakId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        List<StockHolding> holdings = stockHoldingRepository.findByUser(user);
-
-        double totalInvested = 0.0;
-        double currentValue = 0.0;
+        BigDecimal totalInvested = BigDecimal.ZERO;
+        BigDecimal currentValue = BigDecimal.ZERO;
 
         List<HoldingResponse> holdingDtos = new ArrayList<>();
 
         for (StockHolding holding : holdings) {
 
-            double livePrice =
-                    coinGeckoClient
-                            .getCurrentPrice(holding.getSymbol())
-                            .doubleValue();
+            // ===== HARD SAFETY CHECKS =====
+            if (holding == null) continue;
+            if (holding.getQuantity() <= 0) continue;
+            if (holding.getAvgBuyPrice() == null) continue;
+            if (holding.getSymbol() == null) continue;
 
-            double investedValue =
-                    holding.getAvgBuyPrice()
-                            .multiply(BigDecimal.valueOf(holding.getQuantity()))
-                            .doubleValue();
+            BigDecimal price;
 
-            double currentHoldingValue =
-                    holding.getQuantity() * livePrice;
+            try {
+                price = coinGeckoClient.getCurrentPrice(holding.getSymbol());
+            } catch (Exception ex) {
+                // CoinGecko failed (timeout / rate limit / bad response)
+                continue;
+            }
 
-            totalInvested += investedValue;
-            currentValue += currentHoldingValue;
+            // ABSOLUTE GUARANTEE
+            if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+
+            BigDecimal quantity =
+                    BigDecimal.valueOf(holding.getQuantity());
+
+            BigDecimal investedValue =
+                    holding.getAvgBuyPrice().multiply(quantity);
+
+            BigDecimal currentHoldingValue =
+                    price.multiply(quantity);
+
+            totalInvested = totalInvested.add(investedValue);
+            currentValue = currentValue.add(currentHoldingValue);
 
             HoldingResponse dto = new HoldingResponse();
-            dto.setSymbol(holding.getSymbol());
-            dto.setQuantity((double) holding.getQuantity());
+            dto.setCoinId(holding.getSymbol());
+            dto.setQuantity(quantity.doubleValue());
             dto.setAvgBuyPrice(holding.getAvgBuyPrice().doubleValue());
-            dto.setCurrentPrice(livePrice);
-            dto.setInvestedValue(investedValue);
-            dto.setCurrentValue(currentHoldingValue);
-            dto.setProfitLoss(currentHoldingValue - investedValue);
+            dto.setCurrentPrice(price.doubleValue());
+            dto.setInvestedValue(investedValue.doubleValue());
+            dto.setCurrentValue(currentHoldingValue.doubleValue());
+            dto.setProfitLoss(
+                    currentHoldingValue.subtract(investedValue).doubleValue()
+            );
 
             holdingDtos.add(dto);
         }
 
         PortfolioResponse response = new PortfolioResponse();
         response.setHoldings(holdingDtos);
-        response.setTotalInvested(totalInvested);
-        response.setCurrentValue(currentValue);
-        response.setProfitLoss(currentValue - totalInvested);
+        response.setTotalInvested(totalInvested.doubleValue());
+        response.setCurrentValue(currentValue.doubleValue());
+        response.setProfitLoss(
+                currentValue.subtract(totalInvested).doubleValue()
+        );
 
         return response;
     }

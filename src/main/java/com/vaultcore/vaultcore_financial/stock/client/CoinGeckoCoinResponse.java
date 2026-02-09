@@ -1,9 +1,9 @@
 package com.vaultcore.vaultcore_financial.stock.client;
 
 import java.math.BigDecimal;
-import java.util.Map;
 
 class CoinGeckoCoinResponse {
+
     String id;
     String symbol;
     String name;

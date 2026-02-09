@@ -9,8 +9,9 @@ import com.vaultcore.vaultcore_financial.stock.repository.WatchlistRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class WatchlistService {
@@ -29,6 +30,9 @@ public class WatchlistService {
         this.coinGeckoClient = coinGeckoClient;
     }
 
+    /* =========================
+       CURRENT USER
+       ========================= */
     private User getCurrentUser() {
         String keycloakId = SecurityContextHolder
                 .getContext()
@@ -40,49 +44,68 @@ public class WatchlistService {
     }
 
     /* =========================
-       ADD TO WATCHLIST
+       ADD / REMOVE
        ========================= */
-    public void add(String symbol) {
+    public void add(String coinId) {
         User user = getCurrentUser();
 
-        if (watchlistRepository.findByUserAndSymbol(user, symbol).isPresent()) {
+        if (watchlistRepository.findByUserAndSymbol(user, coinId).isPresent()) {
             return;
         }
 
         Watchlist watchlist = new Watchlist();
         watchlist.setUser(user);
-        watchlist.setSymbol(symbol);
+        watchlist.setSymbol(coinId);
 
         watchlistRepository.save(watchlist);
     }
 
-    /* =========================
-       REMOVE FROM WATCHLIST
-       ========================= */
-    public void remove(String symbol) {
+    public void remove(String coinId) {
         User user = getCurrentUser();
 
-        watchlistRepository.findByUserAndSymbol(user, symbol)
+        watchlistRepository.findByUserAndSymbol(user, coinId)
                 .ifPresent(watchlistRepository::delete);
     }
 
     /* =========================
-       GET WATCHLIST
+       GET WATCHLIST (BATCHED)
        ========================= */
     public List<WatchlistDto> getWatchlist() {
 
         User user = getCurrentUser();
+        List<Watchlist> watchlist = watchlistRepository.findByUser(user);
+
+        if (watchlist.isEmpty()) {
+            return List.of();
+        }
+
+        // Collect all coin IDs
+        Set<String> coinIds = watchlist.stream()
+                .map(Watchlist::getSymbol)
+                .collect(Collectors.toSet());
+
+        // SINGLE CoinGecko call with Null Safety
+        Map<String, BigDecimal> prices = Map.of();
+        try {
+            Map<String, BigDecimal> fetchedPrices = coinGeckoClient.getCurrentPrices(coinIds);
+            if (fetchedPrices != null) {
+                prices = fetchedPrices;
+            }
+        } catch (Exception ex) {
+            // Log if needed, but safe to ignore and generic catch is already there
+            prices = Map.of();
+        }
+
         List<WatchlistDto> result = new ArrayList<>();
 
-        for (Watchlist w : watchlistRepository.findByUser(user)) {
-
+        for (Watchlist w : watchlist) {
             WatchlistDto dto = new WatchlistDto();
-            dto.setSymbol(w.getSymbol());
+            dto.setCoinId(w.getSymbol());
+
+            BigDecimal price = prices.get(w.getSymbol());
+
             dto.setCurrentPrice(
-                    coinGeckoClient
-                            .getCoinDetails(w.getSymbol())
-                            .getCurrentPrice()
-                            .doubleValue()
+                    price != null ? price.doubleValue() : 0.0
             );
 
             result.add(dto);

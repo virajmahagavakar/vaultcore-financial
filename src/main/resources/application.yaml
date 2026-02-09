@@ -1,34 +1,38 @@
+
 spring:
   application:
     name: vaultcore-financial
 
   datasource:
-    url: jdbc:h2:mem:vaultcore-db
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:postgresql://localhost:5432/vaultcore_db
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: "00000000"
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update   # use validate in prod
     show-sql: true
-
-  h2:
-    console:
-      enabled: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  cache:
+    type: simple
 
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/vaultcore
-          jwk-set-uri: http://localhost:8080/realms/vaultcore/protocol/openid-connect/certs
-
+          issuer-uri: http://localhost:8081/realms/vaultcore
+          jwk-set-uri: http://localhost:8081/realms/vaultcore/protocol/openid-connect/certs
   keycloak:
-    server-url: http://localhost:8080
+    server-url: http://localhost:8081
     realm: vaultcore
-    client-id: vaultcore-backend
+    client-id: vaultcore-frontend
     client-secret: YOUR_CLIENT_SECRET
     admin:
       username: superadmin
       password: superadmin_password
+
+

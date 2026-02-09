@@ -1,22 +1,34 @@
 package com.vaultcore.vaultcore_financial.stock.service;
 
-
 import com.vaultcore.vaultcore_financial.stock.dto.DepositRequest;
 import com.vaultcore.vaultcore_financial.stock.dto.WalletResponse;
 import com.vaultcore.vaultcore_financial.stock.dto.WithdrawRequest;
 import com.vaultcore.vaultcore_financial.stock.entity.Wallet;
+import com.vaultcore.vaultcore_financial.stock.entity.WalletTransaction;
 import com.vaultcore.vaultcore_financial.stock.repository.WalletRepository;
+import com.vaultcore.vaultcore_financial.stock.repository.WalletTransactionRepository;
+import com.vaultcore.vaultcore_financial.User.Service.AccountService;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 
 @Service
 public class WalletService {
 
     private final WalletRepository walletRepository;
+    private final WalletTransactionRepository walletTxnRepo;
+    private final AccountService accountService;
 
-    public WalletService(WalletRepository walletRepository) {
+    public WalletService(
+            WalletRepository walletRepository,
+            WalletTransactionRepository walletTxnRepo,
+            AccountService accountService
+    ) {
         this.walletRepository = walletRepository;
+        this.walletTxnRepo = walletTxnRepo;
+        this.accountService = accountService;
     }
 
     private String getUserId() {
@@ -30,55 +42,129 @@ public class WalletService {
                 .orElseGet(() -> {
                     Wallet wallet = new Wallet();
                     wallet.setUserId(userId);
-                    wallet.setBalance(0.0);
+                    wallet.setBalance(BigDecimal.ZERO);
                     return walletRepository.save(wallet);
                 });
     }
+
+    /* ================= VIEW ================= */
 
     public WalletResponse getWallet() {
         Wallet wallet = getOrCreateWallet(getUserId());
         return new WalletResponse(wallet.getBalance());
     }
 
+    /* ================= DEPOSIT ================= */
+
     @Transactional
     public WalletResponse deposit(DepositRequest request) {
-        Wallet wallet = getOrCreateWallet(getUserId());
-        wallet.setBalance(wallet.getBalance() + request.getAmount());
+
+        if (request == null || request.getAmount() == null ||
+                request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Invalid deposit amount");
+        }
+
+        String userId = getUserId();
+        Wallet wallet = getOrCreateWallet(userId);
+
+        // Debit bank
+        accountService.debit(userId, request.getAmount());
+
+        // Credit wallet
+        wallet.setBalance(wallet.getBalance().add(request.getAmount()));
         walletRepository.save(wallet);
+
+        walletTxnRepo.save(
+                WalletTransaction.credit(
+                        wallet.getId(),
+                        request.getAmount(),
+                        "DEPOSIT"
+                )
+        );
+
         return new WalletResponse(wallet.getBalance());
     }
+
+    /* ================= WITHDRAW ================= */
 
     @Transactional
     public WalletResponse withdraw(WithdrawRequest request) {
-        Wallet wallet = getOrCreateWallet(getUserId());
 
-        if (wallet.getBalance() < request.getAmount()) {
-            throw new IllegalStateException("Insufficient balance");
+        if (request == null || request.getAmount() == null ||
+                request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Invalid withdrawal amount");
         }
 
-        wallet.setBalance(wallet.getBalance() - request.getAmount());
-        walletRepository.save(wallet);
-        return new WalletResponse(wallet.getBalance());
-    }
+        String userId = getUserId();
+        Wallet wallet = getOrCreateWallet(userId);
 
-    /* ===== INTERNAL (TRADE) ===== */
-
-    @Transactional
-    public void debit(Double amount) {
-        Wallet wallet = getOrCreateWallet(getUserId());
-
-        if (wallet.getBalance() < amount) {
+        if (wallet.getBalance().compareTo(request.getAmount()) < 0) {
             throw new IllegalStateException("Insufficient wallet balance");
         }
 
-        wallet.setBalance(wallet.getBalance() - amount);
+        // Debit wallet
+        wallet.setBalance(wallet.getBalance().subtract(request.getAmount()));
         walletRepository.save(wallet);
+
+        // Credit bank
+        accountService.credit(userId, request.getAmount());
+
+        walletTxnRepo.save(
+                WalletTransaction.debit(
+                        wallet.getId(),
+                        request.getAmount(),
+                        "WITHDRAW"
+                )
+        );
+
+        return new WalletResponse(wallet.getBalance());
+    }
+
+    /* ================= INTERNAL (STOCK) ================= */
+
+    @Transactional
+    public void debitForTrade(String userId, BigDecimal amount) {
+
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Invalid trade amount");
+        }
+
+        Wallet wallet = getOrCreateWallet(userId);
+
+        if (wallet.getBalance().compareTo(amount) < 0) {
+            throw new IllegalStateException("Insufficient wallet balance");
+        }
+
+        wallet.setBalance(wallet.getBalance().subtract(amount));
+        walletRepository.save(wallet);
+
+        walletTxnRepo.save(
+                WalletTransaction.debit(
+                        wallet.getId(),
+                        amount,
+                        "STOCK_BUY"
+                )
+        );
     }
 
     @Transactional
-    public void credit(Double amount) {
-        Wallet wallet = getOrCreateWallet(getUserId());
-        wallet.setBalance(wallet.getBalance() + amount);
+    public void creditForTrade(String userId, BigDecimal amount) {
+
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Invalid trade amount");
+        }
+
+        Wallet wallet = getOrCreateWallet(userId);
+
+        wallet.setBalance(wallet.getBalance().add(amount));
         walletRepository.save(wallet);
+
+        walletTxnRepo.save(
+                WalletTransaction.credit(
+                        wallet.getId(),
+                        amount,
+                        "STOCK_SELL"
+                )
+        );
     }
 }

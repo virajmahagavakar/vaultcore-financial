@@ -77,6 +77,39 @@ public class AccountService {
         return accountRepository.save(account);
     }
 
+    /* ---------------- INTERNAL BALANCE OPS ---------------- */
+    /* Used by WalletService ONLY */
+
+    @Transactional
+    public void debit(String keycloakUserId, BigDecimal amount) {
+
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Invalid debit amount");
+        }
+
+        Account account = getAccountForUser(keycloakUserId);
+
+        if (account.getBalance().compareTo(amount) < 0) {
+            throw new IllegalStateException("Insufficient bank balance");
+        }
+
+        account.setBalance(account.getBalance().subtract(amount));
+        accountRepository.save(account);
+    }
+
+    @Transactional
+    public void credit(String keycloakUserId, BigDecimal amount) {
+
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Invalid credit amount");
+        }
+
+        Account account = getAccountForUser(keycloakUserId);
+
+        account.setBalance(account.getBalance().add(amount));
+        accountRepository.save(account);
+    }
+
     /* ---------------- UPDATES ---------------- */
 
     @Transactional

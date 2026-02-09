@@ -1,5 +1,7 @@
 package com.vaultcore.vaultcore_financial.stock.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.math.BigDecimal;
 
 public class MarketCoinDto {
@@ -9,15 +11,24 @@ public class MarketCoinDto {
     private String name;
     private String image;
 
+    @JsonProperty("current_price")
     private BigDecimal currentPrice;
+
+    @JsonProperty("price_change_24h")
     private BigDecimal priceChange24h;
+
+    @JsonProperty("price_change_percentage_24h")
     private BigDecimal priceChangePercentage24h;
 
+    @JsonProperty("market_cap")
     private BigDecimal marketCap;
+    @JsonProperty("market_cap_rank")
     private Integer marketCapRank;
+    @JsonProperty("total_volume")
     private BigDecimal totalVolume;
-
+    @JsonProperty("high_24h")
     private BigDecimal high24h;
+    @JsonProperty("low_24h")
     private BigDecimal low24h;
 
     // getters & setters

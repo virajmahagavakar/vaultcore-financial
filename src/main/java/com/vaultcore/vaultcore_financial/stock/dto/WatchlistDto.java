@@ -2,23 +2,22 @@ package com.vaultcore.vaultcore_financial.stock.dto;
 
 public class WatchlistDto {
 
-    private String symbol;
+    private String coinId;
     private Double currentPrice;
 
-    public String getSymbol() {
-        return symbol;
+    public String getCoinId() {
+        return coinId;
     }
 
     public Double getCurrentPrice() {
         return currentPrice;
     }
 
-    public void setSymbol(String symbol) {
-        this.symbol = symbol;
+    public void setCoinId(String coinId) {
+        this.coinId = coinId;
     }
 
     public void setCurrentPrice(Double currentPrice) {
         this.currentPrice = currentPrice;
     }
 }
-

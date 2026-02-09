@@ -19,26 +19,26 @@ public class MarketController {
     }
 
     /* =========================
-       HOME / LISTING ENDPOINTS
+       MARKET LISTS
        ========================= */
 
-    @GetMapping("/all")
-    public List<MarketCoinDto> allCoins() {
+    @GetMapping("/coins")
+    public List<MarketCoinDto> getAllCoins() {
         return marketService.getAllCoins();
     }
 
-    @GetMapping("/top50")
-    public List<MarketCoinDto> top50() {
+    @GetMapping("/coins/top50")
+    public List<MarketCoinDto> getTop50Coins() {
         return marketService.getTop50Coins();
     }
 
-    @GetMapping("/gainers")
-    public List<MarketCoinDto> topGainers() {
+    @GetMapping("/coins/gainers")
+    public List<MarketCoinDto> getTopGainers() {
         return marketService.getTopGainers();
     }
 
-    @GetMapping("/losers")
-    public List<MarketCoinDto> topLosers() {
+    @GetMapping("/coins/losers")
+    public List<MarketCoinDto> getTopLosers() {
         return marketService.getTopLosers();
     }
 
@@ -46,24 +46,24 @@ public class MarketController {
        COIN DETAILS
        ========================= */
 
-    @GetMapping("/{symbol}")
-    public MarketCoinDetailDto coinDetails(@PathVariable String symbol)
-    {
-        return marketService.getCoinDetails(symbol);
+    @GetMapping("/coins/{coinId}")
+    public MarketCoinDetailDto coinDetails(@PathVariable String coinId) {
+        return marketService.getCoinDetails(coinId);
     }
 
     /* =========================
-       CHART DATA
+       PRICE CHART
        ========================= */
 
-    @GetMapping("/{symbol}/chart")
+    @GetMapping("/coins/{coinId}/chart")
     public MarketChartDto chart(
-            @PathVariable String symbol,
+            @PathVariable String coinId,
             @RequestParam String range
     ) {
-        return marketService.getChart(symbol, range);
+        return marketService.getChart(coinId, range);
     }
 }
+
 //✅ UI features fully backed (Market)
 //
 //✔ Home page coin list

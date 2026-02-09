@@ -1,4 +1,5 @@
 package com.vaultcore.vaultcore_financial.stock.controller;
+
 import com.vaultcore.vaultcore_financial.stock.dto.BuyRequest;
 import com.vaultcore.vaultcore_financial.stock.dto.SellRequest;
 import com.vaultcore.vaultcore_financial.stock.dto.TradeResponse;
@@ -18,18 +19,25 @@ public class TradeController {
         this.tradeService = tradeService;
     }
 
+    /* ========================= BUY ========================= */
+
     @PostMapping("/buy")
     public TradeResponse buy(@RequestBody BuyRequest request) {
         return tradeService.buy(request);
     }
+
+    /* ========================= SELL ========================= */
 
     @PostMapping("/sell")
     public TradeResponse sell(@RequestBody SellRequest request) {
         return tradeService.sell(request);
     }
 
+    /* ========================= HISTORY ========================= */
+
     @GetMapping("/history")
     public List<StockTrade> history() {
         return tradeService.getTradeHistory();
     }
 }
+

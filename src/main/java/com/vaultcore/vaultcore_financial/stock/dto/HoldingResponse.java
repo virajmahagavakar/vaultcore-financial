@@ -2,7 +2,7 @@ package com.vaultcore.vaultcore_financial.stock.dto;
 
 public class HoldingResponse {
 
-    private String symbol;
+    private String coinId;
     private Double quantity;
     private Double avgBuyPrice;
     private Double currentPrice;
@@ -10,8 +10,8 @@ public class HoldingResponse {
     private Double currentValue;
     private Double profitLoss;
 
-    public String getSymbol() {
-        return symbol;
+    public String getCoinId() {
+        return coinId;
     }
 
     public Double getQuantity() {
@@ -38,8 +38,8 @@ public class HoldingResponse {
         return profitLoss;
     }
 
-    public void setSymbol(String symbol) {
-        this.symbol = symbol;
+    public void setCoinId(String coinId) {
+        this.coinId = coinId;
     }
 
     public void setQuantity(Double quantity) {
@@ -66,4 +66,3 @@ public class HoldingResponse {
         this.profitLoss = profitLoss;
     }
 }
-

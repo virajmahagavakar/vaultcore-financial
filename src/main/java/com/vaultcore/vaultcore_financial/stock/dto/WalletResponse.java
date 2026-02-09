@@ -1,17 +1,20 @@
 package com.vaultcore.vaultcore_financial.stock.dto;
 
-import lombok.Getter;
+import java.math.BigDecimal;
 
-@Getter
 public class WalletResponse {
 
-    private Double balance;
+    private BigDecimal balance;
 
-    public WalletResponse(Double balance) {
+    public WalletResponse(BigDecimal balance) {
         this.balance = balance;
     }
 
-    public void setBalance(Double balance) {
+    public BigDecimal getBalance() {
+        return balance;
+    }
+
+    public void setBalance(BigDecimal balance) {
         this.balance = balance;
     }
 }

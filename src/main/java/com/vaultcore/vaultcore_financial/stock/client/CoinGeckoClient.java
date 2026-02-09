@@ -1,15 +1,16 @@
 package com.vaultcore.vaultcore_financial.stock.client;
 
-import com.vaultcore.vaultcore_financial.stock.dto.MarketChartDto;
-import com.vaultcore.vaultcore_financial.stock.dto.MarketCoinDetailDto;
-import com.vaultcore.vaultcore_financial.stock.dto.MarketCoinDto;
-import com.vaultcore.vaultcore_financial.stock.dto.ChartPointDto;
+import com.vaultcore.vaultcore_financial.stock.dto.*;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -24,101 +25,206 @@ public class CoinGeckoClient {
     /* =========================
        MARKET LIST (Dashboard)
        ========================= */
+    @Cacheable(value = "marketCoins", unless = "#result == null")
     public List<MarketCoinDto> getMarketCoins() {
-        return webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/coins/markets")
-                        .queryParam("vs_currency", "usd")
-                        .queryParam("order", "market_cap_desc")
-                        .queryParam("per_page", 50)
-                        .queryParam("page", 1)
-                        .queryParam("sparkline", false)
-                        .build())
-                .retrieve()
-                .bodyToFlux(MarketCoinDto.class)
-                .collectList()
-                .block();
+        try {
+            return webClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/coins/markets")
+                            .queryParam("vs_currency", "usd")
+                            .queryParam("order", "market_cap_desc")
+                            .queryParam("per_page", 50)
+                            .queryParam("page", 1)
+                            .queryParam("sparkline", false)
+                            .build())
+                    .retrieve()
+                    .bodyToFlux(MarketCoinDto.class)
+                    .collectList()
+                    .block();
+        } catch (WebClientResponseException.TooManyRequests ex) {
+            throw rateLimitException();
+        }
     }
 
     /* =========================
-       COIN DETAILS PAGE
+       COIN DETAILS (single coin)
        ========================= */
+    @Cacheable(value = "coinDetails", key = "#coinId", unless = "#result == null")
     public MarketCoinDetailDto getCoinDetails(String coinId) {
-        return webClient.get()
-                .uri("/coins/{id}", coinId)
-                .retrieve()
-                .bodyToMono(CoinGeckoCoinResponse.class)
-                .map(this::mapToDetailDto)
-                .block();
+        try {
+            CoinGeckoCoinResponse response = webClient.get()
+                    .uri("/coins/{id}", coinId)
+                    .retrieve()
+                    .bodyToMono(CoinGeckoCoinResponse.class)
+                    .block();
+
+            if (response == null) return null;
+            return mapToDetailDto(response);
+
+        } catch (WebClientResponseException.TooManyRequests ex) {
+            throw rateLimitException();
+        }
     }
 
-    public BigDecimal getCurrentPrice(String coinId) {
-        MarketCoinDetailDto detail = getCoinDetails(coinId);
+    /* =========================
+       🔥 BATCH CURRENT PRICES
+       ========================= */
+    public Map<String, BigDecimal> getCurrentPrices(Set<String> coinIds) {
 
-        if (detail == null || detail.getCurrentPrice() == null) {
-            throw new RuntimeException("Price not available for coin: " + coinId);
+        if (coinIds == null || coinIds.isEmpty()) {
+            return Map.of();
         }
 
-        return detail.getCurrentPrice();
+        try {
+            String ids = String.join(",", coinIds);
+
+            Map<String, Map<String, Double>> response =
+                    webClient.get()
+                            .uri(uriBuilder -> uriBuilder
+                                    .path("/simple/price")
+                                    .queryParam("ids", ids)
+                                    .queryParam("vs_currencies", "usd")
+                                    .build())
+                            .retrieve()
+                            .bodyToMono(Map.class)
+                            .block();
+
+            if (response == null) return Map.of();
+
+            Map<String, BigDecimal> prices = new HashMap<>();
+
+            for (String coinId : coinIds) {
+                Double price = Optional.ofNullable(response.get(coinId))
+                        .map(m -> m.get("usd"))
+                        .orElse(null);
+
+                prices.put(
+                        coinId,
+                        price != null ? BigDecimal.valueOf(price) : null
+                );
+            }
+
+            return prices;
+
+        } catch (WebClientResponseException.TooManyRequests ex) {
+            throw rateLimitException();
+        }
     }
 
+    /* =========================
+       LEGACY SINGLE PRICE (SAFE)
+       ========================= */
+    public BigDecimal getCurrentPrice(String coinId) {
+        try {
+            Map<String, BigDecimal> prices =
+                    getCurrentPrices(Set.of(coinId));
+            return prices.get(coinId);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
 
     /* =========================
        PRICE CHART
        ========================= */
+    @Cacheable(value = "coinCharts", key = "#coinId + ':' + #days")
     public MarketChartDto getMarketChart(String coinId, int days) {
-        CoinGeckoChartResponse response = webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/coins/{id}/market_chart")
-                        .queryParam("vs_currency", "usd")
-                        .queryParam("days", days)
-                        .build(coinId))
-                .retrieve()
-                .bodyToMono(CoinGeckoChartResponse.class)
-                .block();
+        try {
+            CoinGeckoChartResponse response = webClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/coins/{id}/market_chart")
+                            .queryParam("vs_currency", "usd")
+                            .queryParam("days", days)
+                            .build(coinId))
+                    .retrieve()
+                    .bodyToMono(CoinGeckoChartResponse.class)
+                    .block();
 
-        List<ChartPointDto> points = response.prices.stream()
-                .map(p -> new ChartPointDto(
-                        p.get(0).longValue(),
-                        BigDecimal.valueOf(p.get(1))
-                ))
-                .collect(Collectors.toList());
+            MarketChartDto dto = new MarketChartDto();
+            dto.setCoinId(coinId);
 
-        MarketChartDto dto = new MarketChartDto();
-        dto.setCoinId(coinId);
-        dto.setPrices(points);
-        return dto;
+            if (response == null || response.prices == null) {
+                dto.setPrices(List.of());
+                return dto;
+            }
+
+            dto.setPrices(
+                    response.prices.stream()
+                            .filter(p -> p.size() >= 2)
+                            .map(p -> new ChartPointDto(
+                                    p.get(0).longValue(),
+                                    BigDecimal.valueOf(p.get(1).doubleValue())
+                            ))
+                            .collect(Collectors.toList())
+            );
+
+            return dto;
+
+        } catch (WebClientResponseException.TooManyRequests ex) {
+            throw rateLimitException();
+        }
     }
 
     /* =========================
-       INTERNAL MAPPING
+       INTERNAL HELPERS
        ========================= */
+    private ResponseStatusException rateLimitException() {
+        return new ResponseStatusException(
+                HttpStatus.TOO_MANY_REQUESTS,
+                "Market data temporarily unavailable. Please try again later."
+        );
+    }
+
     private MarketCoinDetailDto mapToDetailDto(CoinGeckoCoinResponse r) {
         MarketCoinDetailDto dto = new MarketCoinDetailDto();
 
         dto.setId(r.id);
         dto.setSymbol(r.symbol);
         dto.setName(r.name);
-        dto.setImage(r.image.large);
+        dto.setImage(r.image != null ? r.image.large : null);
 
-        dto.setCurrentPrice(r.marketData.currentPrice.usd);
-        dto.setMarketCap(r.marketData.marketCap.usd);
-        dto.setFullyDilutedValuation(r.marketData.fullyDilutedValuation.usd);
-        dto.setTotalVolume(r.marketData.totalVolume.usd);
+        if (r.marketData != null) {
+            dto.setCurrentPrice(
+                    r.marketData.currentPrice != null ? r.marketData.currentPrice.usd : null
+            );
+            dto.setMarketCap(
+                    r.marketData.marketCap != null ? r.marketData.marketCap.usd : null
+            );
+            dto.setFullyDilutedValuation(
+                    r.marketData.fullyDilutedValuation != null
+                            ? r.marketData.fullyDilutedValuation.usd
+                            : null
+            );
+            dto.setTotalVolume(
+                    r.marketData.totalVolume != null ? r.marketData.totalVolume.usd : null
+            );
 
-        dto.setCirculatingSupply(r.marketData.circulatingSupply);
-        dto.setTotalSupply(r.marketData.totalSupply);
-        dto.setMaxSupply(r.marketData.maxSupply);
+            dto.setCirculatingSupply(r.marketData.circulatingSupply);
+            dto.setTotalSupply(r.marketData.totalSupply);
+            dto.setMaxSupply(r.marketData.maxSupply);
 
-        dto.setAth(r.marketData.ath.usd);
-        dto.setAthChangePercentage(r.marketData.athChangePercentage.usd);
-        dto.setAthDate(Instant.parse(r.marketData.athDate.usd));
+            if (r.marketData.ath != null)
+                dto.setAth(r.marketData.ath.usd);
 
-        dto.setAtl(r.marketData.atl.usd);
-        dto.setAtlChangePercentage(r.marketData.atlChangePercentage.usd);
-        dto.setAtlDate(Instant.parse(r.marketData.atlDate.usd));
+            if (r.marketData.athChangePercentage != null)
+                dto.setAthChangePercentage(r.marketData.athChangePercentage.usd);
 
-        dto.setLastUpdated(Instant.parse(r.lastUpdated));
+            if (r.marketData.athDate != null && r.marketData.athDate.usd != null)
+                dto.setAthDate(Instant.parse(r.marketData.athDate.usd));
+
+            if (r.marketData.atl != null)
+                dto.setAtl(r.marketData.atl.usd);
+
+            if (r.marketData.atlChangePercentage != null)
+                dto.setAtlChangePercentage(r.marketData.atlChangePercentage.usd);
+
+            if (r.marketData.atlDate != null && r.marketData.atlDate.usd != null)
+                dto.setAtlDate(Instant.parse(r.marketData.atlDate.usd));
+        }
+
+        if (r.lastUpdated != null) {
+            dto.setLastUpdated(Instant.parse(r.lastUpdated));
+        }
 
         return dto;
     }

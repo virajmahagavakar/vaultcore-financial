@@ -2,6 +2,8 @@ package com.vaultcore.vaultcore_financial.stock.entity;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "wallets")
 public class Wallet {
@@ -13,8 +15,9 @@ public class Wallet {
     @Column(nullable = false)
     private String userId;
 
-    @Column(nullable = false)
-    private Double balance;
+    @Column(nullable = false, precision = 38, scale = 2)
+    private BigDecimal balance = BigDecimal.ZERO;
+
 
     public Long getId() {
         return id;
@@ -24,7 +27,7 @@ public class Wallet {
         return userId;
     }
 
-    public Double getBalance() {
+    public BigDecimal getBalance() {
         return balance;
     }
 
@@ -36,8 +39,9 @@ public class Wallet {
         this.userId = userId;
     }
 
-    public void setBalance(Double balance) {
+    public void setBalance(BigDecimal balance) {
         this.balance = balance;
     }
+
 }
 

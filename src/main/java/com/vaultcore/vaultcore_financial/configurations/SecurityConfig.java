@@ -3,6 +3,7 @@ package com.vaultcore.vaultcore_financial.configurations;
 import com.vaultcore.vaultcore_financial.keycloak.config.JwtAuthConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -28,11 +29,17 @@ public class SecurityConfig {
 
                 // API authorization
                 .authorizeHttpRequests(auth -> auth
-                        // Public APIs (login, register, health)
+                        // Public APIs
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/public/**"
                         ).permitAll()
+
+                        // Public Market APIs
+                        .requestMatchers("/api/market/**").permitAll()
+
+                        // Allow CORS preflight
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // Admin APIs
                         .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -40,9 +47,10 @@ public class SecurityConfig {
                         // User APIs
                         .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
 
-                        // Everything else needs authentication
+                        // Everything else secured
                         .anyRequest().authenticated()
                 )
+
 
                 // OAuth2 Resource Server (Keycloak JWT)
                 .oauth2ResourceServer(oauth -> oauth
