@@ -33,8 +33,7 @@ public class TradeService {
             StockHoldingRepository stockHoldingRepository,
             CoinGeckoClient coinGeckoClient,
             WalletService walletService,
-            UserRepository userRepository
-    ) {
+            UserRepository userRepository) {
         this.stockTradeRepository = stockTradeRepository;
         this.stockHoldingRepository = stockHoldingRepository;
         this.coinGeckoClient = coinGeckoClient;
@@ -66,6 +65,9 @@ public class TradeService {
         String coinId = request.getCoinId();
 
         BigDecimal price = coinGeckoClient.getCurrentPrice(coinId);
+        if (price == null) {
+            throw new IllegalStateException("Failed to fetch current price for coin: " + coinId);
+        }
         BigDecimal amount = request.getAmount();
 
         int quantity = amount.divide(price, 0, RoundingMode.DOWN).intValue();
@@ -89,17 +91,15 @@ public class TradeService {
                     return h;
                 });
 
-        BigDecimal existingValue =
-                holding.getAvgBuyPrice()
-                        .multiply(BigDecimal.valueOf(holding.getQuantity()));
+        BigDecimal existingValue = holding.getAvgBuyPrice()
+                .multiply(BigDecimal.valueOf(holding.getQuantity()));
 
         BigDecimal newValue = existingValue.add(totalCost);
         int newQty = holding.getQuantity() + quantity;
 
         holding.setQuantity(newQty);
         holding.setAvgBuyPrice(
-                newValue.divide(BigDecimal.valueOf(newQty), 8, RoundingMode.HALF_UP)
-        );
+                newValue.divide(BigDecimal.valueOf(newQty), 8, RoundingMode.HALF_UP));
 
         stockHoldingRepository.save(holding);
 
@@ -117,8 +117,7 @@ public class TradeService {
                 TradeType.BUY.name(),
                 quantity,
                 price.doubleValue(),
-                "BUY order executed successfully"
-        );
+                "BUY order executed successfully");
     }
 
     /* ========================= SELL ========================= */
@@ -144,6 +143,9 @@ public class TradeService {
         }
 
         BigDecimal price = coinGeckoClient.getCurrentPrice(coinId);
+        if (price == null) {
+            throw new IllegalStateException("Failed to fetch current price for coin: " + coinId);
+        }
         BigDecimal sellAmount = price.multiply(BigDecimal.valueOf(sellQty));
 
         holding.setQuantity(holding.getQuantity() - sellQty);
@@ -171,8 +173,7 @@ public class TradeService {
                 TradeType.SELL.name(),
                 sellQty,
                 price.doubleValue(),
-                "SELL order executed successfully"
-        );
+                "SELL order executed successfully");
     }
 
     public List<StockTrade> getTradeHistory() {

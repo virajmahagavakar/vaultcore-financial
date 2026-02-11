@@ -12,39 +12,43 @@ import java.util.UUID;
 
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
 
-    /* ---------------- DASHBOARD ---------------- */
+        /* ---------------- DASHBOARD ---------------- */
 
-    List<Transaction> findTop10ByKeycloakUserIdOrderByCreatedAtDesc(
-            String keycloakUserId
-    );
+        List<Transaction> findTop10ByKeycloakUserIdOrderByCreatedAtDesc(
+                        String keycloakUserId);
 
-    /* ---------------- STATEMENTS ---------------- */
+        /* ---------------- STATEMENTS ---------------- */
 
-    List<Transaction> findByKeycloakUserIdAndCreatedAtBetween(
-            String keycloakUserId,
-            LocalDateTime start,
-            LocalDateTime end
-    );
+        List<Transaction> findByKeycloakUserIdAndCreatedAtBetween(
+                        String keycloakUserId,
+                        LocalDateTime start,
+                        LocalDateTime end);
 
-    List<Transaction> findByKeycloakUserIdAndType(
-            String keycloakUserId,
-            TransactionType type
-    );
+        List<Transaction> findByKeycloakUserIdAndType(
+                        String keycloakUserId,
+                        TransactionType type);
 
-    List<Transaction> findByKeycloakUserIdAndStatus(
-            String keycloakUserId,
-            TransactionStatus status
-    );
+        List<Transaction> findByKeycloakUserIdAndStatus(
+                        String keycloakUserId,
+                        TransactionStatus status);
 
-    /* ---------------- ACCOUNT-BASED (INTERNAL) ---------------- */
+        /* ---------------- ACCOUNT-BASED (INTERNAL) ---------------- */
 
-    List<Transaction> findByFromAccountIdOrToAccountId(
-            UUID fromAccountId,
-            UUID toAccountId
-    );
+        List<Transaction> findByFromAccountIdOrToAccountId(
+                        UUID fromAccountId,
+                        UUID toAccountId);
 
-    /* ---------------- REFERENCE / AUDIT ---------------- */
+        /* ---------------- REFERENCE / AUDIT ---------------- */
 
-    List<Transaction> findAllByReferenceId(String referenceId);
+        /* ---------------- REFERENCE / AUDIT ---------------- */
 
+        List<Transaction> findAllByReferenceId(String referenceId);
+
+        /* ---------------- ADMIN STATS ---------------- */
+
+        long countByCreatedAtAfter(LocalDateTime date);
+
+        long countByStatus(TransactionStatus status);
+
+    List<Transaction> findByIsFlaggedTrue();
 }

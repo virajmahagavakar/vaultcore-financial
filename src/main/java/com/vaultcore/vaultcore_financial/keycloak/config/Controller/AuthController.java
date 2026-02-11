@@ -15,48 +15,77 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Value("${spring.keycloak.server-url}")
-    private String keycloakUrl;
+        @Value("${spring.keycloak.server-url}")
+        private String keycloakUrl;
 
-    @Value("${spring.keycloak.realm}")
-    private String realm;
+        @Value("${spring.keycloak.realm}")
+        private String realm;
 
-    @Value("${spring.keycloak.client-id}")
-    private String clientId;
+        @Value("${spring.keycloak.client-id}")
+        private String clientId;
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        @PostMapping("/login")
+        public ResponseEntity<?> login(@RequestBody LoginRequest request) {
 
-        String tokenUrl = keycloakUrl +
-                "/realms/" + realm +
-                "/protocol/openid-connect/token";
+                String tokenUrl = keycloakUrl +
+                                "/realms/" + realm +
+                                "/protocol/openid-connect/token";
 
-        RestTemplate restTemplate = new RestTemplate();
+                RestTemplate restTemplate = new RestTemplate();
 
-        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("grant_type", "authorization_code");
-        body.add("client_id", clientId);                 // PUBLIC client
-        body.add("code", request.getCode());
-        body.add("redirect_uri", request.getRedirectUri());
+                MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+                body.add("grant_type", "authorization_code");
+                body.add("client_id", clientId); // PUBLIC client
+                body.add("code", request.getCode());
+                body.add("redirect_uri", request.getRedirectUri());
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        HttpEntity<MultiValueMap<String, String>> entity =
-                new HttpEntity<>(body, headers);
+                HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, headers);
 
-        try {
-            ResponseEntity<Map> response =
-                    restTemplate.postForEntity(tokenUrl, entity, Map.class);
+                try {
+                        ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, entity, Map.class);
 
-            return ResponseEntity.ok(Map.of(
-                    "accessToken", response.getBody().get("access_token"),
-                    "refreshToken", response.getBody().get("refresh_token")
-            ));
+                        return ResponseEntity.ok(Map.of(
+                                        "accessToken", response.getBody().get("access_token"),
+                                        "refreshToken", response.getBody().get("refresh_token")));
 
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Keycloak login failed: " + e.getMessage());
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                        .body("Keycloak login failed: " + e.getMessage());
+                }
         }
-    }
+
+        @PostMapping("/refresh")
+        public ResponseEntity<?> refresh(
+                        @RequestBody com.vaultcore.vaultcore_financial.keycloak.config.dto.RefreshTokenRequest request) {
+                String tokenUrl = keycloakUrl +
+                                "/realms/" + realm +
+                                "/protocol/openid-connect/token";
+
+                RestTemplate restTemplate = new RestTemplate();
+
+                MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+                body.add("grant_type", "refresh_token");
+                body.add("client_id", clientId);
+                body.add("refresh_token", request.getRefreshToken());
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+                HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, headers);
+
+                try {
+                        ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, entity, Map.class);
+
+                        return ResponseEntity.ok(Map.of(
+                                        "accessToken", response.getBody().get("access_token"),
+                                        "refreshToken", response.getBody().get("refresh_token")));
+
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                        .body("Token refresh failed: " + e.getMessage());
+                }
+        }
 }

@@ -203,6 +203,14 @@ public class CoinGeckoClient {
             dto.setTotalSupply(r.marketData.totalSupply);
             dto.setMaxSupply(r.marketData.maxSupply);
 
+            if (r.marketData.high24h != null)
+                dto.setHigh24h(r.marketData.high24h.usd);
+
+            if (r.marketData.low24h != null)
+                dto.setLow24h(r.marketData.low24h.usd);
+
+            dto.setPriceChangePercentage24h(r.marketData.priceChangePercentage24h);
+
             if (r.marketData.ath != null)
                 dto.setAth(r.marketData.ath.usd);
 

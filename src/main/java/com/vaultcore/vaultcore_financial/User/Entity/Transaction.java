@@ -9,14 +9,11 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(
-        name = "transactions",
-        indexes = {
-                @Index(name = "idx_reference_id", columnList = "reference_id"),
-                @Index(name = "idx_keycloak_user", columnList = "keycloak_user_id"),
-                @Index(name = "idx_created_at", columnList = "created_at")
-        }
-)
+@Table(name = "transactions", indexes = {
+        @Index(name = "idx_reference_id", columnList = "reference_id"),
+        @Index(name = "idx_keycloak_user", columnList = "keycloak_user_id"),
+        @Index(name = "idx_created_at", columnList = "created_at")
+})
 public class Transaction {
 
     @Id
@@ -34,7 +31,7 @@ public class Transaction {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TransactionType type;   // DEBIT / CREDIT
+    private TransactionType type; // DEBIT / CREDIT
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -57,21 +54,35 @@ public class Transaction {
     @Column(name = "keycloak_user_id", nullable = false)
     private String keycloakUserId;
 
+    @Column(name = "is_flagged")
+    private Boolean isFlagged = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    /* ===============================
-       LIFECYCLE
-       =============================== */
+    /*
+     * ===============================
+     * LIFECYCLE
+     * ===============================
+     */
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        // Simple Fraud Rule: Flag if amount > 10,000
+        if (this.amount != null && this.amount.compareTo(new BigDecimal("10000")) > 0) {
+            this.isFlagged = true;
+        }
+        if (this.isFlagged == null) {
+            this.isFlagged = false;
+        }
     }
 
-    /* ===============================
-       GETTERS & SETTERS
-       =============================== */
+    /*
+     * ===============================
+     * GETTERS & SETTERS
+     * ===============================
+     */
 
     public UUID getId() {
         return id;
@@ -143,6 +154,14 @@ public class Transaction {
 
     public void setKeycloakUserId(String keycloakUserId) {
         this.keycloakUserId = keycloakUserId;
+    }
+
+    public Boolean isFlagged() {
+        return isFlagged != null && isFlagged;
+    }
+
+    public void setFlagged(Boolean flagged) {
+        isFlagged = flagged;
     }
 
     public LocalDateTime getCreatedAt() {

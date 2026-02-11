@@ -4,6 +4,7 @@ import com.vaultcore.vaultcore_financial.stock.client.CoinGeckoClient;
 import com.vaultcore.vaultcore_financial.stock.dto.MarketChartDto;
 import com.vaultcore.vaultcore_financial.stock.dto.MarketCoinDetailDto;
 import com.vaultcore.vaultcore_financial.stock.dto.MarketCoinDto;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -61,7 +62,11 @@ public class MarketService {
     /* =========================
        COIN DETAILS
        ========================= */
-
+    @Cacheable(
+            value = "coinDetails",
+            key = "#coinId",
+            unless = "#result == null"
+    )
     public MarketCoinDetailDto getCoinDetails(String coinId) {
         return coinGeckoClient.getCoinDetails(coinId);
     }
@@ -69,7 +74,11 @@ public class MarketService {
     /* =========================
        PRICE CHART
        ========================= */
-
+    @Cacheable(
+            value = "coinCharts",
+            key = "#coinId + ':' + #range",
+            unless = "#result == null"
+    )
     public MarketChartDto getChart(String coinId, String range) {
 
         if (range == null || range.isBlank()) {

@@ -14,6 +14,13 @@ public interface StockTradeRepository extends JpaRepository<StockTrade, UUID> {
 
     List<StockTrade> findByUserAndSymbolOrderByCreatedAtDesc(
             User user,
-            String symbol
-    );
+            String symbol);
+
+    /* ---------------- ADMIN STATS ---------------- */
+
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(t.quantity * t.price) FROM StockTrade t WHERE t.createdAt >= :date")
+    java.math.BigDecimal getTotalVolumeSince(java.time.LocalDateTime date);
+
+    @org.springframework.data.jpa.repository.Query("SELECT t.symbol, COUNT(t) as cnt FROM StockTrade t GROUP BY t.symbol ORDER BY cnt DESC LIMIT 5")
+    List<Object[]> findMostTradedStocks();
 }

@@ -1,5 +1,7 @@
 package com.vaultcore.vaultcore_financial.stock.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 
@@ -10,24 +12,53 @@ public class MarketCoinDetailDto {
     private String name;
     private String image;
 
+    @JsonProperty("current_price")
     private BigDecimal currentPrice;
 
+    @JsonProperty("market_cap")
     private BigDecimal marketCap;
+
+    @JsonProperty("fully_diluted_valuation")
     private BigDecimal fullyDilutedValuation;
+
+    @JsonProperty("total_volume")
     private BigDecimal totalVolume;
 
+    @JsonProperty("circulating_supply")
     private BigDecimal circulatingSupply;
+
+    @JsonProperty("total_supply")
     private BigDecimal totalSupply;
+
+    @JsonProperty("max_supply")
     private BigDecimal maxSupply;
 
+    @JsonProperty("high_24h")
+    private BigDecimal high24h;
+
+    @JsonProperty("low_24h")
+    private BigDecimal low24h;
+
+    @JsonProperty("price_change_percentage_24h")
+    private BigDecimal priceChangePercentage24h;
+
     private BigDecimal ath;
+
+    @JsonProperty("ath_change_percentage")
     private BigDecimal athChangePercentage;
+
+    @JsonProperty("ath_date")
     private Instant athDate;
 
     private BigDecimal atl;
+
+    @JsonProperty("atl_change_percentage")
     private BigDecimal atlChangePercentage;
+
+    @JsonProperty("atl_date")
     private Instant atlDate;
 
+    @JsonProperty("last_updated")
     private Instant lastUpdated;
 
     // getters & setters
@@ -67,6 +98,17 @@ public class MarketCoinDetailDto {
 
     public BigDecimal getMaxSupply() { return maxSupply; }
     public void setMaxSupply(BigDecimal maxSupply) { this.maxSupply = maxSupply; }
+
+    public BigDecimal getHigh24h() { return high24h; }
+    public void setHigh24h(BigDecimal high24h) { this.high24h = high24h; }
+
+    public BigDecimal getLow24h() { return low24h; }
+    public void setLow24h(BigDecimal low24h) { this.low24h = low24h; }
+
+    public BigDecimal getPriceChangePercentage24h() { return priceChangePercentage24h; }
+    public void setPriceChangePercentage24h(BigDecimal priceChangePercentage24h) {
+        this.priceChangePercentage24h = priceChangePercentage24h;
+    }
 
     public BigDecimal getAth() { return ath; }
     public void setAth(BigDecimal ath) { this.ath = ath; }

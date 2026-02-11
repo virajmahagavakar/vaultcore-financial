@@ -52,42 +52,39 @@ public class StockPortfolioService {
 
         List<HoldingResponse> holdingDtos = new ArrayList<>();
 
+
+        // 1. Collect all Unique Coin IDs
+        java.util.Set<String> coinIds = holdings.stream()
+                .map(StockHolding::getSymbol)
+                .collect(java.util.stream.Collectors.toSet());
+
+        // 2. Batch Fetch Prices (Much more efficient)
+        java.util.Map<String, BigDecimal> currentPrices;
+        try {
+            currentPrices = coinGeckoClient.getCurrentPrices(coinIds);
+        } catch (Exception ex) {
+            System.out.println("Rate limit or API error fetching prices, defaulting to 0: " + ex.getMessage());
+            currentPrices = java.util.Collections.emptyMap();
+        }
+
         for (StockHolding holding : holdings) {
+            if (holding == null || holding.getQuantity() <= 0) continue;
 
-            // ===== HARD SAFETY CHECKS =====
-            if (holding == null) continue;
-            if (holding.getQuantity() <= 0) continue;
-            if (holding.getAvgBuyPrice() == null) continue;
-            if (holding.getSymbol() == null) continue;
+            String symbol = holding.getSymbol();
+            BigDecimal price = currentPrices.getOrDefault(symbol, BigDecimal.ZERO);
 
-            BigDecimal price;
+            // Fallback: If current price is 0, maybe use avg buy price to show *something* or just 0
+            // But strict 0 is better than hiding the asset.
 
-            try {
-                price = coinGeckoClient.getCurrentPrice(holding.getSymbol());
-            } catch (Exception ex) {
-                // CoinGecko failed (timeout / rate limit / bad response)
-                continue;
-            }
-
-            // ABSOLUTE GUARANTEE
-            if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
-                continue;
-            }
-
-            BigDecimal quantity =
-                    BigDecimal.valueOf(holding.getQuantity());
-
-            BigDecimal investedValue =
-                    holding.getAvgBuyPrice().multiply(quantity);
-
-            BigDecimal currentHoldingValue =
-                    price.multiply(quantity);
+            BigDecimal quantity = BigDecimal.valueOf(holding.getQuantity());
+            BigDecimal investedValue = holding.getAvgBuyPrice().multiply(quantity);
+            BigDecimal currentHoldingValue = price.multiply(quantity);
 
             totalInvested = totalInvested.add(investedValue);
             currentValue = currentValue.add(currentHoldingValue);
 
             HoldingResponse dto = new HoldingResponse();
-            dto.setCoinId(holding.getSymbol());
+            dto.setCoinId(symbol);
             dto.setQuantity(quantity.doubleValue());
             dto.setAvgBuyPrice(holding.getAvgBuyPrice().doubleValue());
             dto.setCurrentPrice(price.doubleValue());
