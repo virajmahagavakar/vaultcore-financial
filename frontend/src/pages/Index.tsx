@@ -68,12 +68,12 @@ const LandingPage = () => {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <VaultLogo />
           <div className="flex items-center gap-6">
-            <Link to="/about" className="hidden text-sm font-medium text-muted-foreground hover:text-foreground transition-colors md:block">
+            <a href="#about" className="hidden text-sm font-medium text-muted-foreground hover:text-foreground transition-colors md:block">
               About
-            </Link>
-            <Link to="/contact" className="hidden text-sm font-medium text-muted-foreground hover:text-foreground transition-colors md:block">
+            </a>
+            <a href="#contact" className="hidden text-sm font-medium text-muted-foreground hover:text-foreground transition-colors md:block">
               Contact
-            </Link>
+            </a>
             <a href={getKeycloakLoginUrl()}>
               <Button variant="ghost" size="sm" className="text-foreground">
                 Login
@@ -157,6 +157,154 @@ const LandingPage = () => {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Technical Architecture - About Section */}
+      <section id="about" className="relative px-6 py-24 bg-primary/5">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-16 text-center">
+            <h2 className="mb-4 font-display text-3xl font-bold text-foreground md:text-4xl">
+              Technical Architecture
+            </h2>
+            <p className="mx-auto max-w-xl text-muted-foreground">
+              Built with cutting-edge technology for maximum performance and scalability.
+              <br />
+              <span className="mt-2 block font-medium text-primary">Architected by Viraj</span>
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {/* Backend */}
+            <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm p-8 transition-all hover:border-primary/40">
+              <h3 className="mb-4 text-xl font-semibold text-foreground flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+                  <Zap size={20} />
+                </div>
+                High-Performance Backend
+              </h3>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-blue-400" />
+                  <span><strong>Java 21 (LTS)</strong> core for stability and speed.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-blue-400" />
+                  <span><strong>Spring Boot 3.5.9</strong> framework.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-blue-400" />
+                  <span><strong>Virtual Threads (Project Loom)</strong> enabled for handling thousands of concurrent requests effortlessly.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Frontend */}
+            <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm p-8 transition-all hover:border-primary/40">
+              <h3 className="mb-4 text-xl font-semibold text-foreground flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-pink-500/10 text-pink-400">
+                  <Globe size={20} />
+                </div>
+                Modern Frontend
+              </h3>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-pink-400" />
+                  <span><strong>React 18 + Vite</strong> for lightning-fast UI.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-pink-400" />
+                  <span><strong>Tailwind CSS + Shadcn UI</strong> for premium aesthetics.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-pink-400" />
+                  <span><strong>TypeScript</strong> for robust type safety.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* AI & Data */}
+            <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm p-8 transition-all hover:border-primary/40">
+              <h3 className="mb-4 text-xl font-semibold text-foreground flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
+                  <CreditCard size={20} />
+                </div>
+                AI & Market Data
+              </h3>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-purple-400" />
+                  <span><strong>Google Gemini 2.5 AI</strong> integration for smart financial insights.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-purple-400" />
+                  <span><strong>CoinGecko API</strong> for real-time crypto market data.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-purple-400" />
+                  <span><strong>Redis Caching</strong> to prevent rate limits.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Security */}
+            <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm p-8 transition-all hover:border-primary/40">
+              <h3 className="mb-4 text-xl font-semibold text-foreground flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-green-500/10 text-green-400">
+                  <Shield size={20} />
+                </div>
+                Enterprise Security
+              </h3>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-green-400" />
+                  <span><strong>Keycloak</strong> Identity Management (OIDC/OAuth2).</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-green-400" />
+                  <span><strong>Role-Based Access Control (RBAC)</strong> for User/Admin separation.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-green-400" />
+                  <span><strong>JWT Validation</strong> on every request.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Admin Module */}
+            <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm p-8 transition-all hover:border-primary/40 md:col-span-2 lg:col-span-2">
+              <h3 className="mb-4 text-xl font-semibold text-foreground flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-orange-500/10 text-orange-400">
+                  <Users size={20} />
+                </div>
+                Comprehensive Admin System
+              </h3>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-orange-400" />
+                    <span><strong>User Management:</strong> View, Ban, Unban users.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-orange-400" />
+                    <span><strong>Start/Stop Trading:</strong> Global emergency controls.</span>
+                  </li>
+                </ul>
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-orange-400" />
+                    <span><strong>Audit Logs:</strong> Track every admin action (PDF/CSV Export).</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-orange-400" />
+                    <span><strong>Fraud Detection:</strong> Manual review and flagging of suspicious transactions.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </section>
 
       {/* CTA */}

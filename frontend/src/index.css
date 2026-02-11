@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -113,13 +113,25 @@
     font-family: 'Inter', sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Space Grotesk', sans-serif;
   }
 
   /* Hide default cursor on large screens where custom cursor is active */
   @media (min-width: 1024px) {
-    body, a, button, input, select, textarea, .clickable {
+
+    body,
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    .clickable {
       cursor: none;
     }
   }
@@ -156,13 +168,27 @@
   }
 
   @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-20px); }
+
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+
+    50% {
+      transform: translateY(-20px);
+    }
   }
 
   @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px -5px hsl(199 89% 48% / 0.3); }
-    50% { box-shadow: 0 0 40px -5px hsl(199 89% 48% / 0.5); }
+
+    0%,
+    100% {
+      box-shadow: 0 0 20px -5px hsl(199 89% 48% / 0.3);
+    }
+
+    50% {
+      box-shadow: 0 0 40px -5px hsl(199 89% 48% / 0.5);
+    }
   }
 
   .animate-pulse-glow {

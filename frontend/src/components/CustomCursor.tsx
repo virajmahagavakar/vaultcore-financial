@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 
 const CustomCursor = () => {
-  const [cursorShape, setCursorShape] = useState<"default" | "pointer">("default");
-  
+  const [isHovering, setIsHovering] = useState(false);
+
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
-  
-  const springConfig = { damping: 25, stiffness: 400, mass: 0.5 };
+
+  const springConfig = { damping: 20, stiffness: 300, mass: 0.5 };
   const cursorXSpring = useSpring(cursorX, springConfig);
   const cursorYSpring = useSpring(cursorY, springConfig);
 
@@ -22,13 +22,13 @@ const CustomCursor = () => {
       if (
         target.tagName === "A" ||
         target.tagName === "BUTTON" ||
-        target.classList.contains("clickable") || 
-        target.closest("a") || 
+        target.classList.contains("clickable") ||
+        target.closest("a") ||
         target.closest("button")
       ) {
-        setCursorShape("pointer");
+        setIsHovering(true);
       } else {
-        setCursorShape("default");
+        setIsHovering(false);
       }
     };
 
@@ -42,33 +42,33 @@ const CustomCursor = () => {
   }, [cursorX, cursorY]);
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[9999] hidden lg:block">
-      {/* Primary Dot */}
+    <div className="pointer-events-none fixed inset-0 z-[9999] hidden lg:block overflow-hidden">
+      {/* Flash/Spotlight Effect */}
       <motion.div
-        className="fixed left-0 top-0 h-2.5 w-2.5 rounded-full bg-primary"
-        style={{
-          x: cursorX,
-          y: cursorY,
-          translateX: "-50%",
-          translateY: "-50%",
-        }}
-      />
-      {/* Secondary Ring */}
-      <motion.div
-        className="fixed left-0 top-0 h-10 w-10 rounded-full border border-primary/50"
+        className="fixed left-0 top-0 rounded-full"
         style={{
           x: cursorXSpring,
           y: cursorYSpring,
           translateX: "-50%",
           translateY: "-50%",
+          width: "400px",
+          height: "400px",
+          background: "radial-gradient(circle, rgba(29, 78, 216, 0.15) 0%, rgba(29, 78, 216, 0) 60%)",
+          filter: "blur(20px)",
         }}
         animate={{
-          scale: cursorShape === "pointer" ? 1.5 : 1,
-          opacity: 1,
+          scale: isHovering ? 1.2 : 1,
         }}
-        transition={{
-          scale: { duration: 0.2 },
-          opacity: { duration: 0.2 },
+      />
+
+      {/* Core Dot (retained for precision) */}
+      <motion.div
+        className="fixed left-0 top-0 h-2 w-2 rounded-full bg-indigo-500 backdrop-blur-sm"
+        style={{
+          x: cursorX,
+          y: cursorY,
+          translateX: "-50%",
+          translateY: "-50%",
         }}
       />
     </div>
